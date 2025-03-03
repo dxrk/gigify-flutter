@@ -85,12 +85,6 @@ class _ProfilePageState extends State<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
-    }
-
     return Scaffold(
       appBar: AppBar(
         title: const Text(
@@ -104,107 +98,109 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            const SizedBox(height: 20),
-            CircleAvatar(
-              radius: 50,
-              backgroundImage: NetworkImage(_profileData['avatarUrl']),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              _profileData['name'],
-              style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            Text(
-              _profileData['email'],
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey[400],
-              ),
-            ),
-            const SizedBox(height: 8),
-            TextButton.icon(
-              onPressed: () {},
-              icon: const Icon(
-                Icons.edit,
-                size: 16,
-                color: Colors.purpleAccent,
-              ),
-              label: const Text(
-                'Edit Profile',
-                style: TextStyle(
-                  color: Colors.purpleAccent,
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 20),
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              decoration: BoxDecoration(
-                color: const Color(0xFF272727),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  _buildStatColumn(
-                    _profileData['stats']['concerts'].toString(),
-                    'Concerts',
-                  ),
-                  Container(
-                    height: 40,
-                    width: 1,
-                    color: Colors.grey[700],
-                  ),
-                  _buildStatColumn(
-                    _profileData['stats']['artists'].toString(),
-                    'Artists',
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 32),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
               child: Column(
                 children: [
-                  _buildProfileSection(
-                    context,
-                    Icons.favorite_border,
-                    'Favorite Artists',
-                    'Check your followed artists',
+                  const SizedBox(height: 20),
+                  CircleAvatar(
+                    radius: 50,
+                    backgroundImage: NetworkImage(_profileData['avatarUrl']),
                   ),
-                  _buildProfileSection(
-                    context,
-                    Icons.history,
-                    'Concert History',
-                    'Browse your concert history',
+                  const SizedBox(height: 16),
+                  Text(
+                    _profileData['name'],
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                  _buildProfileSection(
-                    context,
-                    Icons.help_outline,
-                    'Help & Support',
-                    'Contact us or read FAQs',
+                  Text(
+                    _profileData['email'],
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.grey[400],
+                    ),
                   ),
-                  _buildProfileSection(
-                    context,
-                    Icons.logout,
-                    'Log Out',
-                    'Sign out from your account',
-                    isDestructive: true,
+                  const SizedBox(height: 8),
+                  TextButton.icon(
+                    onPressed: () {},
+                    icon: const Icon(
+                      Icons.edit,
+                      size: 16,
+                      color: Colors.purpleAccent,
+                    ),
+                    label: const Text(
+                      'Edit Profile',
+                      style: TextStyle(
+                        color: Colors.purpleAccent,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 20),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF272727),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        _buildStatColumn(
+                          _profileData['stats']['concerts'].toString(),
+                          'Concerts',
+                        ),
+                        Container(
+                          height: 40,
+                          width: 1,
+                          color: Colors.grey[700],
+                        ),
+                        _buildStatColumn(
+                          _profileData['stats']['artists'].toString(),
+                          'Artists',
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Column(
+                      children: [
+                        _buildProfileSection(
+                          context,
+                          Icons.favorite_border,
+                          'Favorite Artists',
+                          'Check your followed artists',
+                        ),
+                        _buildProfileSection(
+                          context,
+                          Icons.history,
+                          'Concert History',
+                          'Browse your concert history',
+                        ),
+                        _buildProfileSection(
+                          context,
+                          Icons.help_outline,
+                          'Help & Support',
+                          'Contact us or read FAQs',
+                        ),
+                        _buildProfileSection(
+                          context,
+                          Icons.logout,
+                          'Log Out',
+                          'Sign out from your account',
+                          isDestructive: true,
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
             ),
-          ],
-        ),
-      ),
     );
   }
 
