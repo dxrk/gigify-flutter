@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:nextbigthing/discover_page.dart';
+import 'package:nextbigthing/home_page.dart';
+import 'package:nextbigthing/profile_page.dart';
 
 void main() {
   runApp(const MyApp());
@@ -10,10 +13,30 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Tabbed App',
+      title: 'Gigify',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        brightness: Brightness.dark,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.purple,
+          brightness: Brightness.dark,
+        ),
         useMaterial3: true,
+        scaffoldBackgroundColor: const Color(0xFF121212),
+        cardTheme: CardTheme(
+          color: const Color(0xFF1E1E1E),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Color(0xFF181818),
+          elevation: 0,
+        ),
+        bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+          backgroundColor: Color(0xFF181818),
+          selectedItemColor: Colors.purpleAccent,
+          unselectedItemColor: Colors.grey,
+        ),
       ),
       home: const MainTabController(),
     );
@@ -28,11 +51,11 @@ class MainTabController extends StatefulWidget {
 }
 
 class _MainTabControllerState extends State<MainTabController> {
-  int _currentIndex = 0;
+  int _currentIndex = 1;
 
   final List<Widget> _pages = [
     const DiscoverPage(),
-    const RecommendationsPage(),
+    const HomePage(),
     const ProfilePage(),
   ];
 
@@ -49,71 +72,23 @@ class _MainTabControllerState extends State<MainTabController> {
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: _onTabTapped,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.explore),
+        items: [
+          const BottomNavigationBarItem(
+            icon: Icon(Icons.search),
             label: 'Discover',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.recommend),
-            label: 'Recommendations',
+          const BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Home',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.person),
+            icon: CircleAvatar(
+              radius: 12,
+              backgroundImage: NetworkImage('https://placehold.co/100x100.png'),
+            ),
             label: 'Profile',
           ),
         ],
-      ),
-    );
-  }
-}
-
-class DiscoverPage extends StatelessWidget {
-  const DiscoverPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Discover'),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-      ),
-      body: const Center(
-        child: Text('Discover page content will go here'),
-      ),
-    );
-  }
-}
-
-class RecommendationsPage extends StatelessWidget {
-  const RecommendationsPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Recommendations'),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-      ),
-      body: const Center(
-        child: Text('Recommendations page content will go here'),
-      ),
-    );
-  }
-}
-
-class ProfilePage extends StatelessWidget {
-  const ProfilePage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Profile'),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-      ),
-      body: const Center(
-        child: Text('Profile page content will go here'),
       ),
     );
   }
