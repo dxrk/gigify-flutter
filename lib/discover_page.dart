@@ -99,131 +99,136 @@ class _DiscoverPageState extends State<DiscoverPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Gigify.',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_outlined),
-            onPressed: () {},
+    return SafeArea(
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text(
+            'Gigify.',
+            style: TextStyle(fontWeight: FontWeight.bold),
           ),
-        ],
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Search bar
-                  TextField(
-                    decoration: InputDecoration(
-                      hintText: 'Search concerts',
-                      prefixIcon: const Icon(Icons.search, color: Colors.grey),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(25.0),
-                        borderSide: BorderSide.none,
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.notifications_outlined),
+              onPressed: () {},
+            ),
+          ],
+        ),
+        body: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Search bar
+                    TextField(
+                      decoration: InputDecoration(
+                        hintText: 'Search concerts',
+                        prefixIcon:
+                            const Icon(Icons.search, color: Colors.grey),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(25.0),
+                          borderSide: BorderSide.none,
+                        ),
+                        filled: true,
+                        fillColor: const Color(0xFF272727),
+                        contentPadding: const EdgeInsets.symmetric(vertical: 4),
                       ),
-                      filled: true,
-                      fillColor: const Color(0xFF272727),
-                      contentPadding: const EdgeInsets.symmetric(vertical: 4),
                     ),
-                  ),
-                  const SizedBox(height: 20),
+                    const SizedBox(height: 20),
 
-                  SizedBox(
-                    height: 40,
-                    child: ListView(
-                      scrollDirection: Axis.horizontal,
-                      children: _filters
-                          .map((filter) => _buildFilterPill(filter))
-                          .toList(),
+                    SizedBox(
+                      height: 40,
+                      child: ListView(
+                        scrollDirection: Axis.horizontal,
+                        children: _filters
+                            .map((filter) => _buildFilterPill(filter))
+                            .toList(),
+                      ),
                     ),
-                  ),
 
-                  const SizedBox(height: 24),
-                  const Text(
-                    'Popular Concerts',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 12),
+                    const SizedBox(height: 24),
+                    const Text(
+                      'Popular Concerts',
+                      style:
+                          TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 12),
 
-                  Expanded(
-                    child: ListView.builder(
-                      itemCount: _concerts.length,
-                      itemBuilder: (context, index) {
-                        final concert = _concerts[index];
-                        return Card(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          elevation: 0,
-                          child: Padding(
-                            padding: const EdgeInsets.all(12.0),
-                            child: Row(
-                              children: [
-                                Container(
-                                  width: 70,
-                                  height: 70,
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(10),
-                                    image: DecorationImage(
-                                      image: NetworkImage(concert['imageUrl']),
-                                      fit: BoxFit.cover,
+                    Expanded(
+                      child: ListView.builder(
+                        itemCount: _concerts.length,
+                        itemBuilder: (context, index) {
+                          final concert = _concerts[index];
+                          return Card(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            elevation: 0,
+                            child: Padding(
+                              padding: const EdgeInsets.all(12.0),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 70,
+                                    height: 70,
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(10),
+                                      image: DecorationImage(
+                                        image:
+                                            NetworkImage(concert['imageUrl']),
+                                        fit: BoxFit.cover,
+                                      ),
                                     ),
                                   ),
-                                ),
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        concert['artistName'],
-                                        style: const TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
+                                  const SizedBox(width: 16),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          concert['artistName'],
+                                          style: const TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                          ),
                                         ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        concert['venue'],
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          color: Colors.grey[400],
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          concert['venue'],
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            color: Colors.grey[400],
+                                          ),
                                         ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        concert['date'],
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          color: Colors.grey[400],
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          concert['date'],
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            color: Colors.grey[400],
+                                          ),
                                         ),
-                                      ),
-                                    ],
+                                      ],
+                                    ),
                                   ),
-                                ),
-                                IconButton(
-                                  icon: const Icon(
-                                    Icons.favorite_border,
-                                    color: Colors.purpleAccent,
+                                  IconButton(
+                                    icon: const Icon(
+                                      Icons.favorite_border,
+                                      color: Colors.purpleAccent,
+                                    ),
+                                    onPressed: () {},
                                   ),
-                                  onPressed: () {},
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
-                          ),
-                        );
-                      },
+                          );
+                        },
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
+      ),
     );
   }
 

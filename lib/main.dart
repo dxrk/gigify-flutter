@@ -67,28 +67,31 @@ class _MainTabControllerState extends State<MainTabController> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: _pages[_currentIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: _onTabTapped,
-        items: [
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.search),
-            label: 'Discover',
-          ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: CircleAvatar(
-              radius: 12,
-              backgroundImage: NetworkImage('https://placehold.co/100x100.png'),
+    return SafeArea(
+      child: Scaffold(
+        body: _pages[_currentIndex],
+        bottomNavigationBar: BottomNavigationBar(
+          currentIndex: _currentIndex,
+          onTap: _onTabTapped,
+          items: [
+            const BottomNavigationBarItem(
+              icon: Icon(Icons.search),
+              label: 'Discover',
             ),
-            label: 'Profile',
-          ),
-        ],
+            const BottomNavigationBarItem(
+              icon: Icon(Icons.home),
+              label: 'Home',
+            ),
+            BottomNavigationBarItem(
+              icon: CircleAvatar(
+                radius: 12,
+                backgroundImage:
+                    NetworkImage('https://placehold.co/100x100.png'),
+              ),
+              label: 'Profile',
+            ),
+          ],
+        ),
       ),
     );
   }
