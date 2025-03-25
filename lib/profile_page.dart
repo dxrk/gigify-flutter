@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_web_auth/flutter_web_auth.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -33,9 +36,62 @@ class _ProfilePageState extends State<ProfilePage> {
     _loadProfileData();
   }
 
+  Future<String?> authenticateUser() async {
+    final clientId = "3f5f5da98be44de99b22e24005c0fe08";
+    final redirectUri = "com.example.nextbigthing://callback";
+    final scope = "user-top-read";
+
+    final url = "https://accounts.spotify.com/authorize"
+        "?client_id=$clientId"
+        "&response_type=token"
+        "&redirect_uri=$redirectUri"
+        "&scope=$scope";
+
+    final result = await FlutterWebAuth.authenticate(
+      url: url,
+      callbackUrlScheme: "com.example.nextbigthing",
+    );
+
+    // Extract token from redirect URI
+    return Uri.parse(result).fragment
+        .split("&")
+        .firstWhere((e) => e.startsWith("access_token="))
+        .split("=")[1];
+  }
+
+  Future<List<String>> fetchTopArtists(String accessToken) async {
+    const url = "https://api.spotify.com/v1/me/top/artists?limit=10";
+
+    final response = await http.get(
+      Uri.parse(url),
+      headers: {
+        "Authorization": "Bearer $accessToken",
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return (data['items'] as List).map((artist) => artist['name'] as String).toList();
+    } else {
+      throw Exception("Failed to load top artists");
+    }
+  }
+
+  void getTopArtists() async {
+    final token = await authenticateUser();
+    if (token != null) {
+      final artists = await fetchTopArtists(token);
+      print("User's Top Artists: $artists");
+    } else {
+      print("Authentication failed");
+    }
+  }
+
   Future<void> _loadProfileData() async {
     // Simulate API call delay
     await Future.delayed(const Duration(milliseconds: 500));
+
+    getTopArtists();
 
     setState(() {
       _profileData = {
