@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_web_auth/flutter_web_auth.dart';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:nextbigthing/spotify_auth.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -36,62 +34,9 @@ class _ProfilePageState extends State<ProfilePage> {
     _loadProfileData();
   }
 
-  Future<String?> authenticateUser() async {
-    final clientId = "3f5f5da98be44de99b22e24005c0fe08";
-    final redirectUri = "com.example.nextbigthing://callback";
-    final scope = "user-top-read";
-
-    final url = "https://accounts.spotify.com/authorize"
-        "?client_id=$clientId"
-        "&response_type=token"
-        "&redirect_uri=$redirectUri"
-        "&scope=$scope";
-
-    final result = await FlutterWebAuth.authenticate(
-      url: url,
-      callbackUrlScheme: "com.example.nextbigthing",
-    );
-
-    // Extract token from redirect URI
-    return Uri.parse(result).fragment
-        .split("&")
-        .firstWhere((e) => e.startsWith("access_token="))
-        .split("=")[1];
-  }
-
-  Future<List<String>> fetchTopArtists(String accessToken) async {
-    const url = "https://api.spotify.com/v1/me/top/artists?limit=10";
-
-    final response = await http.get(
-      Uri.parse(url),
-      headers: {
-        "Authorization": "Bearer $accessToken",
-      },
-    );
-
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      return (data['items'] as List).map((artist) => artist['name'] as String).toList();
-    } else {
-      throw Exception("Failed to load top artists");
-    }
-  }
-
-  void getTopArtists() async {
-    final token = await authenticateUser();
-    if (token != null) {
-      final artists = await fetchTopArtists(token);
-      print("User's Top Artists: $artists");
-    } else {
-      print("Authentication failed");
-    }
-  }
-
   Future<void> _loadProfileData() async {
     // Simulate API call delay
     await Future.delayed(const Duration(milliseconds: 500));
-
-    getTopArtists();
 
     setState(() {
       _profileData = {
@@ -232,18 +177,21 @@ class _ProfilePageState extends State<ProfilePage> {
                             Icons.favorite_border,
                             'Favorite Artists',
                             'Check your followed artists',
+                            onTap: () {},
                           ),
                           _buildProfileSection(
                             context,
                             Icons.history,
                             'Concert History',
                             'Browse your concert history',
+                            onTap: () {},
                           ),
                           _buildProfileSection(
                             context,
                             Icons.help_outline,
                             'Help & Support',
                             'Contact us or read FAQs',
+                            onTap: () {},
                           ),
                           _buildProfileSection(
                             context,
@@ -251,6 +199,41 @@ class _ProfilePageState extends State<ProfilePage> {
                             'Log Out',
                             'Sign out from your account',
                             isDestructive: true,
+                            onTap: () {},
+                          ),
+                          _buildProfileSection(
+                            context,
+                            Icons.music_note,
+                            'Sign in with Spotify',
+                            'Link you Spotify and Gigify accounts',
+                            onTap: () async {
+                              String? code = await authenticateWithSpotify();
+                              if (code != null) {
+                                String? accessToken = await getAccessToken(code);
+                                if (accessToken != null) {
+                                  print('Successfully logged in with access token: $accessToken');
+                                } else {
+                                  print('Failed to retrieve access token.');
+                                }
+                              } else {
+                                print('Authentication failed.');
+                              }
+                            },
+                          ),
+                          _buildProfileSection(
+                            context,
+                            Icons.onetwothree,
+                            'Top Artists',
+                            'View your top spotify artists',
+                            onTap: () async {
+                              String? accessToken = await getStoredAccessToken();
+                              if (accessToken != null) {
+                                List<dynamic> topArtists = await getTopArtists(accessToken);
+                                print(topArtists[0]);
+                              } else {
+                                print('Failed to retrieve access token.');
+                              }
+                            },
                           ),
                         ],
                       ),
@@ -290,6 +273,7 @@ class _ProfilePageState extends State<ProfilePage> {
     String title,
     String subtitle, {
     bool isDestructive = false,
+    required VoidCallback onTap,
   }) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -318,7 +302,7 @@ class _ProfilePageState extends State<ProfilePage> {
         trailing: isDestructive
             ? null
             : const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
-        onTap: () {},
+        onTap: onTap,
       ),
     );
   }
