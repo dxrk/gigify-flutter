@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:nextbigthing/spotify_auth.dart';
 import 'package:nextbigthing/main.dart';
+import 'package:nextbigthing/spotify_api.dart';
 
 class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
@@ -11,6 +12,7 @@ class WelcomeScreen extends StatefulWidget {
 
 class _WelcomeScreenState extends State<WelcomeScreen> {
   bool _isLoading = false;
+  String? _profileImageUrl;
 
   Future<void> _loginWithSpotify() async {
     setState(() {
@@ -22,6 +24,14 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       if (code != null) {
         final token = await getAccessToken(code);
         if (token != null) {
+          // Load profile image after successful authentication
+          final profile = await SpotifyApi.getUserProfile(token);
+          if (profile['images']?.isNotEmpty == true) {
+            setState(() {
+              _profileImageUrl = profile['images'][0]['url'];
+            });
+          }
+
           if (mounted) {
             Navigator.of(context).pushReplacement(
               MaterialPageRoute(
@@ -67,11 +77,17 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(
-                  Icons.music_note,
-                  size: 100,
-                  color: Colors.white,
-                ),
+                if (_profileImageUrl != null)
+                  CircleAvatar(
+                    radius: 50,
+                    backgroundImage: NetworkImage(_profileImageUrl!),
+                  )
+                else
+                  const Icon(
+                    Icons.music_note,
+                    size: 100,
+                    color: Colors.white,
+                  ),
                 const SizedBox(height: 24),
                 const Text(
                   'Welcome to Gigify',
@@ -117,7 +133,6 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                             Image.network(
                               'https://upload.wikimedia.org/wikipedia/commons/9/9b/Spotify_1.png',
                               height: 24,
-                              // color: Colors.white,
                             ),
                             const SizedBox(width: 12),
                             const Text(
