@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:nextbigthing/spotify_auth.dart';
 import 'package:nextbigthing/spotify_api.dart';
+import 'package:nextbigthing/top_artist.dart';
 import 'package:nextbigthing/welcome_screen.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -215,7 +216,13 @@ class _ProfilePageState extends State<ProfilePage> {
                             Icons.onetwothree,
                             'Top Artists',
                             'View yrour top spotify artists',
-                            onTap: () async {},
+                            onTap: () async {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => TopArtist()),
+                              );
+                            },
                           ),
                           _buildProfileSection(
                             context,
