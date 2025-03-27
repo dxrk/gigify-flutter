@@ -20,7 +20,7 @@ class SpotifyApi {
 
   static Future<List<dynamic>> getTopArtists(String accessToken) async {
     final response = await http.get(
-      Uri.parse('https://api.spotify.com/v1/me/top/artists?limit=3'),
+      Uri.parse('https://api.spotify.com/v1/me/top/artists?limit=5'),
       headers: {
         'Authorization': 'Bearer $accessToken',
         'Content-Type': 'application/json',
