@@ -29,6 +29,8 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage> {
   Map<String, dynamic> _profileData = {};
   bool _isLoading = true;
+  bool _showSettings = false;
+  double _maxDistance = 50.0;
 
   @override
   void initState() {
@@ -106,7 +108,11 @@ class _ProfilePageState extends State<ProfilePage> {
           actions: [
             IconButton(
               icon: const Icon(Icons.settings_outlined),
-              onPressed: () {},
+              onPressed: () {
+                setState(() {
+                  _showSettings = !_showSettings;
+                });
+              },
             ),
           ],
         ),
@@ -115,6 +121,7 @@ class _ProfilePageState extends State<ProfilePage> {
             : SingleChildScrollView(
                 child: Column(
                   children: [
+                    if (_showSettings) _buildSettingsPanel(),
                     const SizedBox(height: 20),
                     CircleAvatar(
                       radius: 50,
@@ -232,6 +239,128 @@ class _ProfilePageState extends State<ProfilePage> {
                   ],
                 ),
               ),
+      ),
+    );
+  }
+
+  Widget _buildSettingsPanel() {
+    return Container(
+      margin: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF272727),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Settings',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.purpleAccent,
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.close, color: Colors.white),
+                onPressed: () {
+                  setState(() {
+                    _showSettings = false;
+                  });
+                },
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'Max Distance for Concerts',
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '${_maxDistance.toInt()} miles',
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey[400],
+            ),
+          ),
+          Slider(
+            value: _maxDistance,
+            min: 10,
+            max: 500,
+            divisions: 49,
+            activeColor: Colors.purpleAccent,
+            inactiveColor: Colors.grey[700],
+            onChanged: (value) {
+              setState(() {
+                _maxDistance = value;
+              });
+            },
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                '10 miles',
+                style: TextStyle(
+                  color: Colors.grey[400],
+                  fontSize: 12,
+                ),
+              ),
+              Text(
+                '500 miles',
+                style: TextStyle(
+                  color: Colors.grey[400],
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          const Divider(color: Colors.grey),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Notifications',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.white,
+                ),
+              ),
+              Switch(
+                value: true,
+                onChanged: (value) {},
+                activeColor: Colors.purpleAccent,
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: () {
+              setState(() {
+                _showSettings = false;
+              });
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.purpleAccent,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+              minimumSize: const Size(double.infinity, 50),
+            ),
+            child: const Text('Save Settings'),
+          ),
+        ],
       ),
     );
   }
