@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:nextbigthing/spotify_auth.dart';
+import 'package:nextbigthing/spotify_api.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -24,7 +26,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  Map<String, dynamic> _dummyData = {};
+  Map<String, dynamic> _homeData = {};
   bool _isLoading = true;
 
   @override
@@ -34,36 +36,67 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _loadHomeData() async {
-    // Simulate API call delay
-    await Future.delayed(const Duration(milliseconds: 500));
+    try {
+      final token = await getStoredAccessToken();
+      if (token == null) {
+        setState(() {
+          _isLoading = false;
+        });
+        return;
+      }
 
-    setState(() {
-      _dummyData = {
-        'username': 'Johnny',
-        'featured': {
-          'title': 'Headliner Artist',
-          'venue': 'Arena Stadium',
-          'date': 'March 15 2025',
-          'imageUrl': 'https://placehold.co/400x200.png',
-        },
-        'forYou': List.generate(
-            5,
-            (index) => {
-                  'artist': 'Artist ${index + 1}',
-                  'date': 'March ${20 + index} 2025',
-                  'venue': 'Venue ${index + 1}',
-                  'imageUrl': 'https://placehold.co/170x170.png',
-                }),
-        'trending': List.generate(
-            4,
-            (index) => {
-                  'artist': 'Trending Artist ${index + 1}',
-                  'date': 'April ${5 + index} 2025',
-                  'imageUrl': 'https://placehold.co/200x200.png',
-                }),
-      };
-      _isLoading = false;
-    });
+      final profile = await SpotifyApi.getUserProfile(token);
+      final topArtists = await SpotifyApi.getTopArtists(token);
+      final recentlyPlayed = await SpotifyApi.getRecentlyPlayed(token);
+
+      setState(() {
+        _homeData = {
+          'username': profile['display_name'] ?? 'Unknown User',
+          'featured': {
+            'title': topArtists.isNotEmpty
+                ? topArtists[0]['name']
+                : 'No Featured Artist',
+            'venue': 'Spotify', // Keep as dummy data for now
+            'date': DateTime.now()
+                .toString()
+                .split(' ')[0], // Keep as dummy data for now
+            'imageUrl': topArtists.isNotEmpty &&
+                    topArtists[0]['images']?.isNotEmpty == true
+                ? topArtists[0]['images'][0]['url']
+                : 'https://placehold.co/400x200.png',
+          },
+          'forYou': recentlyPlayed
+              .map((track) => {
+                    'artist': track['track']['artists'][0]['name'],
+                    'date': DateTime.now()
+                        .toString()
+                        .split(' ')[0], // Keep as dummy data for now
+                    'venue': 'Spotify', // Keep as dummy data for now
+                    'imageUrl':
+                        track['track']['album']['images']?.isNotEmpty == true
+                            ? track['track']['album']['images'][0]['url']
+                            : 'https://placehold.co/170x170.png',
+                  })
+              .toList(),
+          'trending': topArtists
+              .map((artist) => {
+                    'artist': artist['name'],
+                    'date': DateTime.now()
+                        .toString()
+                        .split(' ')[0], // Keep as dummy data for now
+                    'imageUrl': artist['images']?.isNotEmpty == true
+                        ? artist['images'][0]['url']
+                        : 'https://placehold.co/200x200.png',
+                  })
+              .toList(),
+        };
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   @override
@@ -91,7 +124,7 @@ class _HomePageState extends State<HomePage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Welcome, ${_dummyData['username']}',
+                        'Welcome, ${_homeData['username']}',
                         style: const TextStyle(
                           fontSize: 28,
                           fontWeight: FontWeight.bold,
@@ -119,8 +152,8 @@ class _HomePageState extends State<HomePage> {
                             ],
                           ),
                           image: DecorationImage(
-                            image: NetworkImage(
-                                _dummyData['featured']['imageUrl']),
+                            image:
+                                NetworkImage(_homeData['featured']['imageUrl']),
                             fit: BoxFit.cover,
                             colorFilter: ColorFilter.mode(
                               Colors.black.withValues(alpha: 0.5),
@@ -152,7 +185,7 @@ class _HomePageState extends State<HomePage> {
                               ),
                               const SizedBox(height: 12),
                               Text(
-                                _dummyData['featured']['title'],
+                                _homeData['featured']['title'],
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 26,
@@ -169,7 +202,7 @@ class _HomePageState extends State<HomePage> {
                                   ),
                                   const SizedBox(width: 4),
                                   Text(
-                                    _dummyData['featured']['venue'],
+                                    _homeData['featured']['venue'],
                                     style: TextStyle(
                                       color:
                                           Colors.white.withValues(alpha: 0.9),
@@ -184,7 +217,7 @@ class _HomePageState extends State<HomePage> {
                                   ),
                                   const SizedBox(width: 4),
                                   Text(
-                                    _dummyData['featured']['date'],
+                                    _homeData['featured']['date'],
                                     style: TextStyle(
                                       color:
                                           Colors.white.withValues(alpha: 0.9),
@@ -224,9 +257,9 @@ class _HomePageState extends State<HomePage> {
                         height: 230,
                         child: ListView.builder(
                           scrollDirection: Axis.horizontal,
-                          itemCount: _dummyData['forYou'].length,
+                          itemCount: _homeData['forYou'].length,
                           itemBuilder: (context, index) {
-                            final concert = _dummyData['forYou'][index];
+                            final concert = _homeData['forYou'][index];
                             return Container(
                               width: 170,
                               margin: const EdgeInsets.only(right: 16),
@@ -330,9 +363,9 @@ class _HomePageState extends State<HomePage> {
                           crossAxisSpacing: 16,
                           mainAxisSpacing: 16,
                         ),
-                        itemCount: _dummyData['trending'].length,
+                        itemCount: _homeData['trending'].length,
                         itemBuilder: (context, index) {
-                          final trending = _dummyData['trending'][index];
+                          final trending = _homeData['trending'][index];
                           return Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [

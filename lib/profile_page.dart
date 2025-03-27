@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:nextbigthing/spotify_auth.dart';
+import 'package:nextbigthing/spotify_api.dart';
+import 'package:nextbigthing/welcome_screen.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -26,6 +29,8 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage> {
   Map<String, dynamic> _profileData = {};
   bool _isLoading = true;
+  bool _showSettings = false;
+  double _maxDistance = 50.0;
 
   @override
   void initState() {
@@ -34,53 +39,61 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _loadProfileData() async {
-    // Simulate API call delay
-    await Future.delayed(const Duration(milliseconds: 500));
+    try {
+      final token = await getStoredAccessToken();
+      if (token == null) {
+        setState(() {
+          _isLoading = false;
+        });
+        return;
+      }
 
-    setState(() {
-      _profileData = {
-        'name': 'Johnny Appleseed',
-        'email': 'jappleseed@umd.edu',
-        'avatarUrl': 'https://placehold.co/100x100.png',
-        'stats': {
-          'concerts': 12,
-          'upcoming': 5,
-          'artists': 8,
-        },
-        'favoriteArtists': [
-          {
-            'name': 'Taylor Swift',
-            'genre': 'Pop',
-            'imageUrl': 'https://placehold.co/100x100.png'
+      final profile = await SpotifyApi.getUserProfile(token);
+      final topArtists = await SpotifyApi.getTopArtists(token);
+      final recentlyPlayed = await SpotifyApi.getRecentlyPlayed(token);
+
+      setState(() {
+        _profileData = {
+          'name': profile['display_name'] ?? 'Unknown User',
+          'email': profile['email'] ?? 'No email available',
+          'avatarUrl': profile['images']?.isNotEmpty == true
+              ? profile['images'][0]['url']
+              : 'https://placehold.co/100x100.png',
+          'stats': {
+            'concerts': 12,
+            'upcoming': 5,
+            'artists': topArtists.length,
           },
-          {
-            'name': 'The Weeknd',
-            'genre': 'R&B',
-            'imageUrl': 'https://placehold.co/100x100.png'
-          },
-          {
-            'name': 'Coldplay',
-            'genre': 'Rock',
-            'imageUrl': 'https://placehold.co/100x100.png'
-          }
-        ],
-        'concertHistory': [
-          {
-            'artistName': 'Ed Sheeran',
-            'venue': 'Madison Square Garden',
-            'date': '2024-01-15',
-            'imageUrl': 'https://placehold.co/100x100.png'
-          },
-          {
-            'artistName': 'Drake',
-            'venue': 'O2 Arena',
-            'date': '2023-12-20',
-            'imageUrl': 'https://placehold.co/100x100.png'
-          }
-        ]
-      };
-      _isLoading = false;
-    });
+          'favoriteArtists': topArtists
+              .map((artist) => {
+                    'name': artist['name'],
+                    'genre': artist['genres']?.isNotEmpty == true
+                        ? artist['genres'][0]
+                        : 'Unknown Genre',
+                    'imageUrl': artist['images']?.isNotEmpty == true
+                        ? artist['images'][0]['url']
+                        : 'https://placehold.co/100x100.png'
+                  })
+              .toList(),
+          'concertHistory': recentlyPlayed
+              .map((track) => {
+                    'artistName': track['track']['artists'][0]['name'],
+                    'venue': 'Spotify',
+                    'date': DateTime.now().toString().split(' ')[0],
+                    'imageUrl':
+                        track['track']['album']['images']?.isNotEmpty == true
+                            ? track['track']['album']['images'][0]['url']
+                            : 'https://placehold.co/100x100.png'
+                  })
+              .toList()
+        };
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   @override
@@ -95,7 +108,11 @@ class _ProfilePageState extends State<ProfilePage> {
           actions: [
             IconButton(
               icon: const Icon(Icons.settings_outlined),
-              onPressed: () {},
+              onPressed: () {
+                setState(() {
+                  _showSettings = !_showSettings;
+                });
+              },
             ),
           ],
         ),
@@ -104,6 +121,7 @@ class _ProfilePageState extends State<ProfilePage> {
             : SingleChildScrollView(
                 child: Column(
                   children: [
+                    if (_showSettings) _buildSettingsPanel(),
                     const SizedBox(height: 20),
                     CircleAvatar(
                       radius: 50,
@@ -176,18 +194,28 @@ class _ProfilePageState extends State<ProfilePage> {
                             Icons.favorite_border,
                             'Favorite Artists',
                             'Check your followed artists',
+                            onTap: () {},
                           ),
                           _buildProfileSection(
                             context,
                             Icons.history,
                             'Concert History',
                             'Browse your concert history',
+                            onTap: () {},
                           ),
                           _buildProfileSection(
                             context,
                             Icons.help_outline,
                             'Help & Support',
                             'Contact us or read FAQs',
+                            onTap: () {},
+                          ),
+                          _buildProfileSection(
+                            context,
+                            Icons.onetwothree,
+                            'Top Artists',
+                            'View yrour top spotify artists',
+                            onTap: () async {},
                           ),
                           _buildProfileSection(
                             context,
@@ -195,6 +223,15 @@ class _ProfilePageState extends State<ProfilePage> {
                             'Log Out',
                             'Sign out from your account',
                             isDestructive: true,
+                            onTap: () async {
+                              await logout();
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const WelcomeScreen(),
+                                ),
+                              );
+                            },
                           ),
                         ],
                       ),
@@ -202,6 +239,128 @@ class _ProfilePageState extends State<ProfilePage> {
                   ],
                 ),
               ),
+      ),
+    );
+  }
+
+  Widget _buildSettingsPanel() {
+    return Container(
+      margin: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF272727),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Settings',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.purpleAccent,
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.close, color: Colors.white),
+                onPressed: () {
+                  setState(() {
+                    _showSettings = false;
+                  });
+                },
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'Max Distance for Concerts',
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '${_maxDistance.toInt()} miles',
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey[400],
+            ),
+          ),
+          Slider(
+            value: _maxDistance,
+            min: 10,
+            max: 500,
+            divisions: 49,
+            activeColor: Colors.purpleAccent,
+            inactiveColor: Colors.grey[700],
+            onChanged: (value) {
+              setState(() {
+                _maxDistance = value;
+              });
+            },
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                '10 miles',
+                style: TextStyle(
+                  color: Colors.grey[400],
+                  fontSize: 12,
+                ),
+              ),
+              Text(
+                '500 miles',
+                style: TextStyle(
+                  color: Colors.grey[400],
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          const Divider(color: Colors.grey),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Notifications',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.white,
+                ),
+              ),
+              Switch(
+                value: true,
+                onChanged: (value) {},
+                activeColor: Colors.purpleAccent,
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: () {
+              setState(() {
+                _showSettings = false;
+              });
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.purpleAccent,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+              minimumSize: const Size(double.infinity, 50),
+            ),
+            child: const Text('Save Settings'),
+          ),
+        ],
       ),
     );
   }
@@ -234,6 +393,7 @@ class _ProfilePageState extends State<ProfilePage> {
     String title,
     String subtitle, {
     bool isDestructive = false,
+    required VoidCallback onTap,
   }) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -262,7 +422,7 @@ class _ProfilePageState extends State<ProfilePage> {
         trailing: isDestructive
             ? null
             : const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
-        onTap: () {},
+        onTap: onTap,
       ),
     );
   }
