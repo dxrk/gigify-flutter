@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter_web_auth/flutter_web_auth.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -18,16 +20,18 @@ final storage = FlutterSecureStorage();
 
 // --- Function to Generate Authentication URL ---
 String generateAuthUrl() {
+  final encodedScopes = Uri.encodeFull(scopes); // URL-encode the scopes
   return '$authEndpoint?client_id=$clientId'
       '&response_type=code'
       '&redirect_uri=$redirectUri'
-      '&scope=$scopes'
-      '&state=randomstring123'; // Used for security
+      '&scope=$encodedScopes'  // Use the encoded scopes here
+      '&state=randomstring123${Random().nextInt(1000)}'; // Used for security
 }
 
 // --- Function to Authenticate User with Spotify ---
 Future<String?> authenticateWithSpotify() async {
   final authUrl = generateAuthUrl();
+  print("Opening Spotify Auth URL: $authUrl");
 
   try {
     final result = await FlutterWebAuth.authenticate(
@@ -35,14 +39,18 @@ Future<String?> authenticateWithSpotify() async {
       callbackUrlScheme: 'nextbigthing',
     );
 
-    // Extract the authorization code from the redirect URL
+    print("Redirect received: $result");
+
     final code = Uri.parse(result).queryParameters['code'];
+    print("Extracted code: $code");
+
     return code;
   } catch (e) {
     print('Error during authentication: $e');
     return null;
   }
 }
+
 
 // --- Function to Exchange Authorization Code for Access Token ---
 Future<String?> getAccessToken(String code) async {
