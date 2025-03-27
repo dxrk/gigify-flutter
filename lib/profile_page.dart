@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:nextbigthing/spotify_auth.dart';
+import 'package:nextbigthing/spotify_api.dart';
+import 'package:nextbigthing/welcome_screen.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -35,53 +37,61 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _loadProfileData() async {
-    // Simulate API call delay
-    await Future.delayed(const Duration(milliseconds: 500));
+    try {
+      final token = await getStoredAccessToken();
+      if (token == null) {
+        setState(() {
+          _isLoading = false;
+        });
+        return;
+      }
 
-    setState(() {
-      _profileData = {
-        'name': 'Johnny Appleseed',
-        'email': 'jappleseed@umd.edu',
-        'avatarUrl': 'https://placehold.co/100x100.png',
-        'stats': {
-          'concerts': 12,
-          'upcoming': 5,
-          'artists': 8,
-        },
-        'favoriteArtists': [
-          {
-            'name': 'Taylor Swift',
-            'genre': 'Pop',
-            'imageUrl': 'https://placehold.co/100x100.png'
+      final profile = await SpotifyApi.getUserProfile(token);
+      final topArtists = await SpotifyApi.getTopArtists(token);
+      final recentlyPlayed = await SpotifyApi.getRecentlyPlayed(token);
+
+      setState(() {
+        _profileData = {
+          'name': profile['display_name'] ?? 'Unknown User',
+          'email': profile['email'] ?? 'No email available',
+          'avatarUrl': profile['images']?.isNotEmpty == true
+              ? profile['images'][0]['url']
+              : 'https://placehold.co/100x100.png',
+          'stats': {
+            'concerts': 12,
+            'upcoming': 5,
+            'artists': topArtists.length,
           },
-          {
-            'name': 'The Weeknd',
-            'genre': 'R&B',
-            'imageUrl': 'https://placehold.co/100x100.png'
-          },
-          {
-            'name': 'Coldplay',
-            'genre': 'Rock',
-            'imageUrl': 'https://placehold.co/100x100.png'
-          }
-        ],
-        'concertHistory': [
-          {
-            'artistName': 'Ed Sheeran',
-            'venue': 'Madison Square Garden',
-            'date': '2024-01-15',
-            'imageUrl': 'https://placehold.co/100x100.png'
-          },
-          {
-            'artistName': 'Drake',
-            'venue': 'O2 Arena',
-            'date': '2023-12-20',
-            'imageUrl': 'https://placehold.co/100x100.png'
-          }
-        ]
-      };
-      _isLoading = false;
-    });
+          'favoriteArtists': topArtists
+              .map((artist) => {
+                    'name': artist['name'],
+                    'genre': artist['genres']?.isNotEmpty == true
+                        ? artist['genres'][0]
+                        : 'Unknown Genre',
+                    'imageUrl': artist['images']?.isNotEmpty == true
+                        ? artist['images'][0]['url']
+                        : 'https://placehold.co/100x100.png'
+                  })
+              .toList(),
+          'concertHistory': recentlyPlayed
+              .map((track) => {
+                    'artistName': track['track']['artists'][0]['name'],
+                    'venue': 'Spotify',
+                    'date': DateTime.now().toString().split(' ')[0],
+                    'imageUrl':
+                        track['track']['album']['images']?.isNotEmpty == true
+                            ? track['track']['album']['images'][0]['url']
+                            : 'https://placehold.co/100x100.png'
+                  })
+              .toList()
+        };
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   @override
@@ -195,44 +205,25 @@ class _ProfilePageState extends State<ProfilePage> {
                           ),
                           _buildProfileSection(
                             context,
+                            Icons.onetwothree,
+                            'Top Artists',
+                            'View yrour top spotify artists',
+                            onTap: () async {},
+                          ),
+                          _buildProfileSection(
+                            context,
                             Icons.logout,
                             'Log Out',
                             'Sign out from your account',
                             isDestructive: true,
-                            onTap: () {},
-                          ),
-                          _buildProfileSection(
-                            context,
-                            Icons.music_note,
-                            'Sign in with Spotify',
-                            'Link you Spotify and Gigify accounts',
                             onTap: () async {
-                              String? code = await authenticateWithSpotify();
-                              if (code != null) {
-                                String? accessToken = await getAccessToken(code);
-                                if (accessToken != null) {
-                                  print('Successfully logged in with access token: $accessToken');
-                                } else {
-                                  print('Failed to retrieve access token.');
-                                }
-                              } else {
-                                print('Authentication failed.');
-                              }
-                            },
-                          ),
-                          _buildProfileSection(
-                            context,
-                            Icons.onetwothree,
-                            'Top Artists',
-                            'View your top spotify artists',
-                            onTap: () async {
-                              String? accessToken = await getStoredAccessToken();
-                              if (accessToken != null) {
-                                List<dynamic> topArtists = await getTopArtists(accessToken);
-                                print(topArtists[0]);
-                              } else {
-                                print('Failed to retrieve access token.');
-                              }
+                              await logout();
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const WelcomeScreen(),
+                                ),
+                              );
                             },
                           ),
                         ],

@@ -29,7 +29,6 @@ String generateAuthUrl() {
 
 Future<String?> authenticateWithSpotify() async {
   final authUrl = generateAuthUrl();
-  print("Opening Spotify Auth URL: $authUrl");
 
   try {
     final result = await FlutterWebAuth2.authenticate(
@@ -37,29 +36,26 @@ Future<String?> authenticateWithSpotify() async {
       callbackUrlScheme: 'nextbigthing',
     );
 
-    print("Redirect received: $result");
-
     final uri = Uri.parse(result);
-    print("Parsed URI: $uri");
 
-    final code = uri.queryParameters['code'];
-    print("Extracted code: $code");
+    var code = uri.queryParameters['code'];
+
+    if (code == null && uri.fragment.isNotEmpty) {
+      final fragmentParams = Uri.splitQueryString(uri.fragment);
+      code = fragmentParams['code'];
+    }
 
     if (code == null) {
-      print("No code received in the redirect URL");
-      return null;
+      return throw Exception('Failed to extract code from redirect');
     }
 
     return code;
   } catch (e) {
-    print('Error during authentication: $e');
-    return null;
+    return throw Exception('Failed to authenticate with Spotify: $e');
   }
 }
 
 Future<String?> getAccessToken(String code) async {
-  print("Getting access token with code: $code");
-
   final response = await http.post(
     Uri.parse(tokenEndpoint),
     headers: {
@@ -74,18 +70,13 @@ Future<String?> getAccessToken(String code) async {
     },
   );
 
-  print("Token response status: ${response.statusCode}");
-  print("Token response body: ${response.body}");
-
   if (response.statusCode == 200) {
     final jsonResponse = jsonDecode(response.body);
     final accessToken = jsonResponse['access_token'];
-    print("Successfully obtained access token");
     await saveAccessToken(accessToken);
     return accessToken;
   } else {
-    print('Failed to get access token: ${response.body}');
-    return null;
+    return throw Exception('Failed to get access token: ${response.body}');
   }
 }
 

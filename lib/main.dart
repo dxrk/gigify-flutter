@@ -5,6 +5,7 @@ import 'package:nextbigthing/profile_page.dart';
 import 'package:nextbigthing/spotify_auth.dart';
 import 'package:nextbigthing/welcome_screen.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:nextbigthing/spotify_api.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -96,12 +97,35 @@ class MainTabController extends StatefulWidget {
 
 class _MainTabControllerState extends State<MainTabController> {
   int _currentIndex = 1;
+  String? _profileImageUrl;
 
   final List<Widget> _pages = [
     const DiscoverPage(),
     const HomePage(),
     const ProfilePage(),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfileImage();
+  }
+
+  Future<void> _loadProfileImage() async {
+    try {
+      final token = await getStoredAccessToken();
+      if (token == null) return;
+
+      final profile = await SpotifyApi.getUserProfile(token);
+      if (profile['images']?.isNotEmpty == true) {
+        setState(() {
+          _profileImageUrl = profile['images'][0]['url'];
+        });
+      }
+    } catch (e) {
+      debugPrint('Failed to load profile image: $e');
+    }
+  }
 
   void _onTabTapped(int index) {
     setState(() {
@@ -129,8 +153,12 @@ class _MainTabControllerState extends State<MainTabController> {
             BottomNavigationBarItem(
               icon: CircleAvatar(
                 radius: 12,
-                backgroundImage:
-                    NetworkImage('https://placehold.co/100x100.png'),
+                backgroundImage: _profileImageUrl != null
+                    ? NetworkImage(_profileImageUrl!)
+                    : null,
+                child: _profileImageUrl == null
+                    ? const Icon(Icons.person, size: 16)
+                    : null,
               ),
               label: 'Profile',
             ),
