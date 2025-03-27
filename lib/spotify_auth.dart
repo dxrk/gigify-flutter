@@ -1,48 +1,54 @@
 import 'dart:math';
 
-import 'package:flutter_web_auth/flutter_web_auth.dart';
+import 'package:flutter_web_auth_2/flutter_web_auth_2.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-// --- Spotify Credentials ---
-const String clientId = '3f5f5da98be44de99b22e24005c0fe08';
-const String clientSecret = '18c06394174b482ab6ba6df0c0b12c60';
-const String redirectUri = 'nextbigthing://callback';
+String get clientId => dotenv.env['SPOTIFY_CLIENT_ID'] ?? '';
+String get clientSecret => dotenv.env['SPOTIFY_CLIENT_SECRET'] ?? '';
+String get redirectUri => dotenv.env['SPOTIFY_REDIRECT_URI'] ?? '';
+
 const String authEndpoint = 'https://accounts.spotify.com/authorize';
 const String tokenEndpoint = 'https://accounts.spotify.com/api/token';
 
-// Scopes define what permissions your app requests
-const String scopes = 'user-read-email user-read-private';
+const String scopes =
+    'user-read-email user-read-private user-top-read user-read-recently-played user-read-currently-playing user-read-playback-state';
 
-// Secure storage for access tokens
 final storage = FlutterSecureStorage();
 
-// --- Function to Generate Authentication URL ---
 String generateAuthUrl() {
-  final encodedScopes = Uri.encodeFull(scopes); // URL-encode the scopes
+  final encodedScopes = Uri.encodeFull(scopes);
   return '$authEndpoint?client_id=$clientId'
       '&response_type=code'
       '&redirect_uri=$redirectUri'
-      '&scope=$encodedScopes'  // Use the encoded scopes here
-      '&state=randomstring123${Random().nextInt(1000)}'; // Used for security
+      '&scope=$encodedScopes'
+      '&state=randomstring123${Random().nextInt(1000)}';
 }
 
-// --- Function to Authenticate User with Spotify ---
 Future<String?> authenticateWithSpotify() async {
   final authUrl = generateAuthUrl();
   print("Opening Spotify Auth URL: $authUrl");
 
   try {
-    final result = await FlutterWebAuth.authenticate(
+    final result = await FlutterWebAuth2.authenticate(
       url: authUrl,
       callbackUrlScheme: 'nextbigthing',
     );
 
     print("Redirect received: $result");
 
-    final code = Uri.parse(result).queryParameters['code'];
+    final uri = Uri.parse(result);
+    print("Parsed URI: $uri");
+
+    final code = uri.queryParameters['code'];
     print("Extracted code: $code");
+
+    if (code == null) {
+      print("No code received in the redirect URL");
+      return null;
+    }
 
     return code;
   } catch (e) {
@@ -51,14 +57,14 @@ Future<String?> authenticateWithSpotify() async {
   }
 }
 
-
-// --- Function to Exchange Authorization Code for Access Token ---
 Future<String?> getAccessToken(String code) async {
+  print("Getting access token with code: $code");
+
   final response = await http.post(
     Uri.parse(tokenEndpoint),
     headers: {
       'Authorization':
-      'Basic ${base64Encode(utf8.encode('$clientId:$clientSecret'))}',
+          'Basic ${base64Encode(utf8.encode('$clientId:$clientSecret'))}',
       'Content-Type': 'application/x-www-form-urlencoded',
     },
     body: {
@@ -68,9 +74,13 @@ Future<String?> getAccessToken(String code) async {
     },
   );
 
+  print("Token response status: ${response.statusCode}");
+  print("Token response body: ${response.body}");
+
   if (response.statusCode == 200) {
     final jsonResponse = jsonDecode(response.body);
     final accessToken = jsonResponse['access_token'];
+    print("Successfully obtained access token");
     await saveAccessToken(accessToken);
     return accessToken;
   } else {
@@ -79,17 +89,14 @@ Future<String?> getAccessToken(String code) async {
   }
 }
 
-// --- Function to Store Access Token Securely ---
 Future<void> saveAccessToken(String token) async {
   await storage.write(key: 'spotify_access_token', value: token);
 }
 
-// --- Function to Retrieve Stored Access Token ---
 Future<String?> getStoredAccessToken() async {
   return await storage.read(key: 'spotify_access_token');
 }
 
-// --- Function to Logout (Clear Token) ---
 Future<void> logout() async {
   await storage.delete(key: 'spotify_access_token');
 }
@@ -107,7 +114,7 @@ Future<List<dynamic>> getTopArtists(String accessToken) async {
 
   if (response.statusCode == 200) {
     final data = jsonDecode(response.body);
-    return data['items']; // List of top artists
+    return data['items'];
   } else {
     throw Exception('Failed to load top artists: ${response.body}');
   }
