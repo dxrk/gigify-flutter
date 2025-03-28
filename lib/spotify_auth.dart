@@ -1,13 +1,15 @@
+import 'dart:convert';
 import 'dart:math';
 
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_web_auth_2/flutter_web_auth_2.dart';
 import 'package:http/http.dart' as http;
-import 'dart:convert';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 String get clientId => dotenv.env['SPOTIFY_CLIENT_ID'] ?? '';
+
 String get clientSecret => dotenv.env['SPOTIFY_CLIENT_SECRET'] ?? '';
+
 String get redirectUri => dotenv.env['SPOTIFY_REDIRECT_URI'] ?? '';
 
 const String authEndpoint = 'https://accounts.spotify.com/authorize';

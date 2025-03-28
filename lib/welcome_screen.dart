@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:nextbigthing/spotify_auth.dart';
 import 'package:nextbigthing/main.dart';
 import 'package:nextbigthing/spotify_api.dart';
+import 'package:nextbigthing/spotify_auth.dart';
 
 class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});

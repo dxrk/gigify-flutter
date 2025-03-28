@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:nextbigthing/spotify_auth.dart';
+import 'package:nextbigthing/faq.dart';
+import 'package:nextbigthing/followed_artist.dart';
 import 'package:nextbigthing/spotify_api.dart';
+import 'package:nextbigthing/spotify_auth.dart';
 import 'package:nextbigthing/top_artist.dart';
 import 'package:nextbigthing/welcome_screen.dart';
 
@@ -193,9 +195,15 @@ class _ProfilePageState extends State<ProfilePage> {
                           _buildProfileSection(
                             context,
                             Icons.favorite_border,
-                            'Favorite Artists',
+                            'Followed Artists',
                             'Check your followed artists',
-                            onTap: () {},
+                            onTap: () async {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => FollowedArtist()),
+                              );
+                            },
                           ),
                           _buildProfileSection(
                             context,
@@ -209,13 +217,19 @@ class _ProfilePageState extends State<ProfilePage> {
                             Icons.help_outline,
                             'Help & Support',
                             'Contact us or read FAQs',
-                            onTap: () {},
+                            onTap: () async {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => FAQPage()),
+                              );
+                            },
                           ),
                           _buildProfileSection(
                             context,
                             Icons.onetwothree,
                             'Top Artists',
-                            'View yrour top spotify artists',
+                            'View your top spotify artists',
                             onTap: () async {
                               Navigator.push(
                                 context,

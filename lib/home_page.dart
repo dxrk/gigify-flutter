@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:nextbigthing/spotify_auth.dart';
 import 'package:nextbigthing/spotify_api.dart';
+import 'package:nextbigthing/spotify_auth.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
