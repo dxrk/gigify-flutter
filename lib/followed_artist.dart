@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:nextbigthing/spotify_api.dart';
 import 'package:nextbigthing/spotify_auth.dart';
 
-class TopArtist extends StatefulWidget {
-  const TopArtist({super.key});
+class FollowedArtist extends StatefulWidget {
+  const FollowedArtist({super.key});
 
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Top Artist')),
+      appBar: AppBar(title: Text('Followed Artist')),
       body: Center(
         child: Text('This is the Subpage'),
       ),
@@ -15,10 +15,10 @@ class TopArtist extends StatefulWidget {
   }
 
   @override
-  State<StatefulWidget> createState() => TopArtistState();
+  State<StatefulWidget> createState() => FollowedArtistState();
 }
 
-class TopArtistState extends State<TopArtist> {
+class FollowedArtistState extends State<FollowedArtist> {
   Map<String, dynamic> _artistData = {};
   bool _isLoading = true;
 
@@ -32,11 +32,11 @@ class TopArtistState extends State<TopArtist> {
         return;
       }
 
-      final topArtists = await SpotifyApi.getTopArtists(token);
+      final followedArtist = await SpotifyApi.getFollowedArtists(token);
 
       setState(() {
         _artistData = {
-          'favoriteArtists': topArtists
+          'favoriteArtists': followedArtist
               .map((artist) => {
                     'name': artist['name'],
                     'genre': artist['genres']?.isNotEmpty == true
@@ -68,7 +68,7 @@ class TopArtistState extends State<TopArtist> {
     if (_isLoading) {
       return Scaffold(
         appBar: AppBar(
-          title: Text('Top Artists'),
+          title: Text('Followed Artists'),
         ),
         body: Center(
           child: CircularProgressIndicator(),
@@ -78,7 +78,7 @@ class TopArtistState extends State<TopArtist> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Top Artists'),
+        title: Text('Followed Artists'),
       ),
       body: _artistData['favoriteArtists'] != null
           ? GridView.builder(
@@ -126,7 +126,7 @@ class TopArtistState extends State<TopArtist> {
                 );
               },
             )
-          : Center(child: Text('No favorite artists found')),
+          : Center(child: Text('No followed artists found')),
     );
   }
 }

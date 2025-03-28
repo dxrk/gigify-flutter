@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:nextbigthing/discover_page.dart';
 import 'package:nextbigthing/home_page.dart';
 import 'package:nextbigthing/profile_page.dart';
+import 'package:nextbigthing/spotify_api.dart';
 import 'package:nextbigthing/spotify_auth.dart';
 import 'package:nextbigthing/welcome_screen.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:nextbigthing/spotify_api.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
