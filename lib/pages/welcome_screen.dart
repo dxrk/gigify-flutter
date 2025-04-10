@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:nextbigthing/main.dart';
-import 'package:nextbigthing/spotify_api.dart';
-import 'package:nextbigthing/spotify_auth.dart';
+import 'package:nextbigthing/services/spotify/spotify_api.dart';
+import 'package:nextbigthing/services/spotify/spotify_auth.dart';
+import 'package:nextbigthing/services/ticketmaster/ticketmaster_api.dart';
 
 class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
@@ -24,7 +25,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       if (code != null) {
         final token = await getAccessToken(code);
         if (token != null) {
-          // Load profile image after successful authentication
+          await TicketmasterAPI.initialize();
+          
           final profile = await SpotifyApi.getUserProfile(token);
           if (profile['images']?.isNotEmpty == true) {
             setState(() {
