@@ -266,13 +266,16 @@ class _HomePageState extends State<HomePage> {
                                   Row(
                                     children: [
                                       Icon(Icons.calendar_today,
-                                          size: 14, color: Colors.grey[400]),
+                                        size: 14, color: Colors.grey[400]),
                                       const SizedBox(width: 4),
-                                      Text(
+                                      Flexible(
+                                      child: Text(
                                         concert['date']!,
                                         style: TextStyle(
-                                            color: Colors.grey[400],
-                                            fontSize: 14),
+                                          color: Colors.grey[400],
+                                          fontSize: 14),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
                                       ),
                                     ],
                                   ),
@@ -280,14 +283,16 @@ class _HomePageState extends State<HomePage> {
                                   Row(
                                     children: [
                                       Icon(Icons.location_on,
-                                          size: 14, color: Colors.grey[400]),
+                                        size: 14, color: Colors.grey[400]),
                                       const SizedBox(width: 4),
-                                      Text(
+                                      Flexible(
+                                      child: Text(
                                         concert['venue']!,
                                         style: TextStyle(
-                                            color: Colors.grey[400],
-                                            fontSize: 14),
+                                          color: Colors.grey[400],
+                                          fontSize: 14),
                                         overflow: TextOverflow.ellipsis,
+                                      ),
                                       ),
                                     ],
                                   ),
