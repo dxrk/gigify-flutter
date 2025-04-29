@@ -177,12 +177,15 @@ class _HomePageState extends State<HomePage> {
                                 ),
                               ),
                               const SizedBox(height: 12),
-                              Text(
-                                _featuredConcert.name,
-                                style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 26,
-                                    fontWeight: FontWeight.bold),
+                              Flexible(
+                                child: Text(
+                                      _featuredConcert.name,
+                                      style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 26,
+                                      fontWeight: FontWeight.bold),
+                                      overflow: TextOverflow.ellipsis,
+                                ),
                               ),
                               const SizedBox(height: 4),
                               Row(
