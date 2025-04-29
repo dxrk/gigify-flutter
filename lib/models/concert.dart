@@ -1,5 +1,7 @@
 import 'package:nextbigthing/models/artist.dart';
-import 'package:nextbigthing/models/venue.dart';
+import 'package:nextbigthing/services/cache/cache_service.dart';
+import 'package:flutter/material.dart';
+import 'dart:io';
 
 class Concert {
   final String id;
@@ -7,7 +9,7 @@ class Concert {
   final String name;
   final DateTime startDateTime;
   final DateTime? endDateTime;
-  final Venue venue;
+  final String venue;
   final String? imageUrl;
   final double? minPrice;
   final double? maxPrice;
@@ -16,6 +18,8 @@ class Concert {
   final String? description;
   final bool isSoldOut;
   final int? ageRestriction;
+  String? _cachedImagePath;
+  bool _isCachingImage = false;
 
   double score;
 
@@ -37,11 +41,50 @@ class Concert {
     this.score = 0.0,
   });
 
+  Future<String?> getCachedImagePath() async {
+    if (_cachedImagePath != null) return _cachedImagePath;
+    if (imageUrl == null) return null;
+    if (_isCachingImage) return null;
+
+    _isCachingImage = true;
+    try {
+      final cacheService = await CacheService.initialize();
+      _cachedImagePath = await cacheService.cacheImage(imageUrl!);
+      return _cachedImagePath;
+    } finally {
+      _isCachingImage = false;
+    }
+  }
+
+  Future<bool> isImageCached() async {
+    if (imageUrl == null) return false;
+    if (_cachedImagePath != null) return true;
+
+    final cacheService = await CacheService.initialize();
+    return await cacheService.isImageCached(imageUrl!);
+  }
+
+  Future<ImageProvider> getImageProvider() async {
+    if (imageUrl == null) {
+      return const NetworkImage('https://placehold.co/400x400.png');
+    }
+
+    final cachedPath = await getCachedImagePath();
+    if (cachedPath != null) {
+      return FileImage(File(cachedPath));
+    }
+
+    return NetworkImage(imageUrl!);
+  }
+
   factory Concert.fromJson(Map<String, dynamic> json) {
-    final startDate = DateTime.tryParse(
-          json['dates']?['start']?['dateTime'] ?? '',
-        ) ??
-        DateTime.now();
+    final startDate = json.containsKey('dates') &&
+            json['dates'].containsKey('start') &&
+            json['dates']['start'].containsKey('dateTime')
+        ? DateTime.parse(json['dates']['start']['dateTime'] as String)
+        : json.containsKey('startDateTime')
+            ? DateTime.parse(json['startDateTime'] as String)
+            : DateTime.now();
 
     final endDate = json.containsKey('dates') &&
             json['dates'].containsKey('end') &&
@@ -62,15 +105,14 @@ class Concert {
           : null;
     }
 
-    final venueData = (json['_embedded']?['venues'] != null &&
-            (json['_embedded']['venues'] as List).isNotEmpty)
-        ? json['_embedded']['venues'][0] as Map<String, dynamic>
-        : <String, dynamic>{
-            'id': 'unknown',
-            'name': 'Unknown Venue',
-          };
-
-    final venue = Venue.fromJson(venueData);
+    final venue = json.containsKey('_embedded') &&
+            json['_embedded'].containsKey('venues') &&
+            (json['_embedded']['venues'] as List<dynamic>).isNotEmpty
+        ? (json['_embedded']['venues'][0] as Map<String, dynamic>)['name']
+            .toString()
+        : json.containsKey('venue')
+            ? json['venue'].toString()
+            : 'Unknown Venue';
 
     final artistData = json.containsKey('_embedded') &&
             json['_embedded'].containsKey('attractions') &&
@@ -120,18 +162,14 @@ class Concert {
     }
 
     String? imageUrl;
-    if (json.containsKey('images') &&
+    if (json.containsKey('imageUrl')) {
+      imageUrl = json['imageUrl'] as String;
+    } else if (json.containsKey('images') &&
         (json['images'] as List<dynamic>).isNotEmpty) {
-      for (final image in json['images'] as List<dynamic>) {
-        if (image.containsKey('ratio') && image['ratio'] == '16_9') {
-          imageUrl = image['url'] as String;
-          break;
-        }
-      }
-
-      if (imageUrl == null) {
-        imageUrl = (json['images'] as List<dynamic>)[0]['url']?.toString();
-      }
+      final images =
+          List<Map<String, dynamic>>.from(json['images'] as List<dynamic>);
+      images.sort((a, b) => (b['width'] as int).compareTo(a['width'] as int));
+      imageUrl = images[0]['url'] as String;
     }
 
     bool isSoldOut = false;
@@ -145,7 +183,7 @@ class Concert {
     if (json.containsKey('ageRestrictions') &&
         json['ageRestrictions'].containsKey('legalAgeEnforced') &&
         json['ageRestrictions']['legalAgeEnforced'] == true) {
-      ageRestriction = 21; 
+      ageRestriction = 21;
     } else if (json.containsKey('info')) {
       final info = json['info'] as String;
       if (info.contains('18+')) {
@@ -200,7 +238,7 @@ class Concert {
       'name': name,
       'startDateTime': startDateTime.toIso8601String(),
       'endDateTime': endDateTime?.toIso8601String(),
-      'venue': venue.toJson(),
+      'venue': venue,
       'imageUrl': imageUrl,
       'minPrice': minPrice,
       'maxPrice': maxPrice,
@@ -224,4 +262,25 @@ class Concert {
 
   @override
   String toString() => 'Concert(id: $id, name: $name, artist: ${artist.name})';
+
+  String getFormattedStartTimeTruncated() {
+    return _formatDate(startDateTime);
+  }
+
+  String getFormattedStartTime() {
+    final formattedTime = _formatTime(startDateTime);
+    return formattedTime == '12:00 AM'
+        ? _formatDate(startDateTime)
+        : '${_formatDate(startDateTime)} at $formattedTime';
+  }
+
+  String _formatDate(DateTime date) {
+    return '${date.month}/${date.day}/${date.year}';
+  }
+
+  String _formatTime(DateTime date) {
+    final hour = date.hour > 12 ? date.hour - 12 : date.hour;
+    final amPm = date.hour >= 12 ? 'PM' : 'AM';
+    return '${hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')} $amPm';
+  }
 }

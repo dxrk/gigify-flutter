@@ -1,43 +1,35 @@
-// TODO: Fix images not loading once cached
 // TODO: "Recommended" stops displaying after you click on the other tabs
 // TODO: Location services (including on TicketMaster's end) aren't fully functional
 //       - Figure out why TicketMaster isn't taking the location data
 //       - Pull location when doing the query in the al
-// TODO: Need to remove unnecessary code
-// TODO: Fine tune the algorithm
 // TODO: Update the stats on the profile page – allow users to "follow artists" and "add concerts"
+// TODO: Fix concert info not displaying once cached
 
 import 'package:nextbigthing/services/spotify/spotify_api.dart';
 import 'package:nextbigthing/services/ticketmaster/ticketmaster_api.dart';
 import 'package:nextbigthing/services/cache/cache_service.dart';
 import 'package:nextbigthing/models/artist.dart';
 import 'package:nextbigthing/models/concert.dart';
-import 'package:nextbigthing/models/genre.dart';
 import 'package:nextbigthing/utils/date_utils.dart';
 
 class ConcertRecommendationService {
-  final SpotifyApi _spotifyApi;
   final TicketmasterAPI _ticketmasterApi;
   final CacheService _cacheService;
 
   static const int _cacheDurationHours = 24;
   static const int _maxConcurrencyLimit = 5;
-  static const double _priceSensitivityDefault = 0.5;
   static const int _defaultSearchLookAheadDays = 180;
 
   ConcertRecommendationService._({
-    required SpotifyApi spotifyApi,
     required TicketmasterAPI ticketmasterApi,
     required CacheService cacheService,
-  })  : _spotifyApi = spotifyApi,
-        _ticketmasterApi = ticketmasterApi,
+  })  : _ticketmasterApi = ticketmasterApi,
         _cacheService = cacheService;
 
   static ConcertRecommendationService? _instance;
 
   static Future<ConcertRecommendationService> initialize() async {
     _instance ??= ConcertRecommendationService._(
-      spotifyApi: SpotifyApi(),
       ticketmasterApi: await TicketmasterAPI.initialize(),
       cacheService: await CacheService.initialize(),
     );
@@ -50,10 +42,8 @@ class ConcertRecommendationService {
     int radius = 50,
     int searchPeriod = _defaultSearchLookAheadDays,
     int limit = 20,
-    double priceSensitivity = _priceSensitivityDefault,
     bool includeSimilarArtists = false,
     List<String> excludeGenres = const [],
-    List<String> preferredVenues = const [],
   }) async {
     try {
       print(
@@ -129,14 +119,19 @@ class ConcertRecommendationService {
       for (var item in recentlyPlayed) {
         final artist = Artist.fromJson(item['track']['artists'][0]);
         final existingScore = artistScores[artist.id] ?? 0.0;
+        final playCount = item['play_count'] ?? 1;
+        final position = recentlyPlayed.indexOf(item);
+
+        final recencyWeight = 1.0 - (position / recentlyPlayed.length);
         artistScores[artist.id] = existingScore +
             _calculateArtistScore(
-              artist: artist,
-              position: recentlyPlayed.indexOf(item),
-              listSize: recentlyPlayed.length,
-              baseWeight: 5.0,
-              playCount: item['play_count'] ?? 1,
-            );
+                  artist: artist,
+                  position: position,
+                  listSize: recentlyPlayed.length,
+                  baseWeight: 8.0,
+                  playCount: playCount,
+                ) *
+                (1.0 + recencyWeight);
       }
 
       final Map<String, List<Artist>> artistBuckets = _categorizeArtists(
@@ -150,8 +145,6 @@ class ConcertRecommendationService {
         'recommended': [],
         'discovery': [],
       };
-
-      final endDate = DateTime.now().add(Duration(days: searchPeriod));
 
       for (final entry in artistBuckets.entries) {
         final String category = entry.key;
@@ -194,16 +187,24 @@ class ConcertRecommendationService {
 
       final processedResults = await _processResults(
         concertResults: concertResults,
-        priceSensitivity: priceSensitivity,
-        preferredVenues: preferredVenues,
         genreWeights: genreWeights,
         limit: limit,
       );
 
+      final cacheData = processedResults.map((key, value) {
+        final concerts = value.map((concert) {
+          final json = concert.toJson();
+          if (concert.venue != 'Unknown Venue') {
+            json['venue'] = concert.venue;
+          }
+          return json;
+        }).toList();
+        return MapEntry(key, concerts);
+      });
+
       await _cacheService.set(
         cacheKey,
-        processedResults.map((key, value) =>
-            MapEntry(key, value.map((c) => c.toJson()).toList())),
+        cacheData,
         Duration(hours: _cacheDurationHours),
       );
 
@@ -226,42 +227,10 @@ class ConcertRecommendationService {
       'discovery': [],
     };
 
-    final mustSeeArtists = artistScores.entries.toList()
-      ..sort((a, b) => b.value.compareTo(a.value));
-
-    final recommendedEntries = artistScores.entries.toList()
-      ..sort((a, b) => b.value.compareTo(a.value));
-
-    final recommendedArtists = recommendedEntries.skip(5).take(15).map((e) {
-      return topArtists.firstWhere(
-        (a) => a.id == e.key,
-        orElse: () => followedArtists.firstWhere(
-          (a) => a.id == e.key,
-          orElse: () =>
-              Artist(id: e.key, name: 'Unknown', popularity: 0, genres: []),
-        ),
-      );
-    }).toList();
-
     final sortedEntries = artistScores.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
 
-    final discoveryArtists = sortedEntries.skip(20).map((entry) {
-      return topArtists.firstWhere(
-        (a) => a.id == entry.key,
-        orElse: () => followedArtists.firstWhere(
-          (a) => a.id == entry.key,
-          orElse: () => Artist(
-            id: entry.key,
-            name: 'Unknown',
-            popularity: 0,
-            genres: [],
-          ),
-        ),
-      );
-    }).toList();
-
-    buckets['mustSee'] = mustSeeArtists.map((e) {
+    buckets['mustSee'] = sortedEntries.take(5).map((e) {
       return topArtists.firstWhere(
         (a) => a.id == e.key,
         orElse: () => followedArtists.firstWhere(
@@ -272,16 +241,33 @@ class ConcertRecommendationService {
       );
     }).toList();
 
-    buckets['recommended'] = recommendedArtists;
-    buckets['discovery'] = discoveryArtists;
+    buckets['recommended'] = sortedEntries.skip(5).take(15).map((e) {
+      return topArtists.firstWhere(
+        (a) => a.id == e.key,
+        orElse: () => followedArtists.firstWhere(
+          (a) => a.id == e.key,
+          orElse: () =>
+              Artist(id: e.key, name: 'Unknown', popularity: 0, genres: []),
+        ),
+      );
+    }).toList();
+
+    buckets['discovery'] = sortedEntries.skip(20).map((e) {
+      return topArtists.firstWhere(
+        (a) => a.id == e.key,
+        orElse: () => followedArtists.firstWhere(
+          (a) => a.id == e.key,
+          orElse: () =>
+              Artist(id: e.key, name: 'Unknown', popularity: 0, genres: []),
+        ),
+      );
+    }).toList();
 
     return buckets;
   }
 
   Future<Map<String, List<Concert>>> _processResults({
     required Map<String, List<Concert>> concertResults,
-    required double priceSensitivity,
-    required List<String> preferredVenues,
     required Map<String, double> genreWeights,
     required int limit,
   }) async {
@@ -295,20 +281,9 @@ class ConcertRecommendationService {
 
       concerts = _removeDuplicates(concerts);
 
-      if (preferredVenues.isNotEmpty) {
-        concerts = concerts.map((concert) {
-          if (preferredVenues.contains(concert.venue.id)) {
-            concert.score += 2.0;
-          }
-          return concert;
-        }).toList();
-      }
-
-      if (priceSensitivity < 1.0) {
-        concerts = _applyPriceSensitivity(concerts, priceSensitivity);
-      }
-
       concerts = _applyGenreScoring(concerts, genreWeights);
+
+      concerts = _applyTimeBasedScoring(concerts);
 
       concerts.sort((a, b) => b.score.compareTo(a.score));
 
@@ -318,60 +293,40 @@ class ConcertRecommendationService {
     return processed;
   }
 
-  List<Concert> _applyGenreScoring(
-    List<Concert> concerts,
-    Map<String, double> genreWeights,
-  ) {
+  List<Concert> _applyTimeBasedScoring(List<Concert> concerts) {
+    final now = DateTime.now();
     return concerts.map((concert) {
-      double genreScore = 0;
+      final daysUntilConcert = concert.startDateTime.difference(now).inDays;
 
-      for (final genre in concert.genres) {
-        if (genreWeights.containsKey(genre)) {
-          genreScore += genreWeights[genre]!;
-        }
-      }
-
-      if (genreScore > 0) {
-        final normalizedScore =
-            (genreScore / genreWeights.values.reduce((a, b) => a > b ? a : b)) *
-                3;
-        concert.score += normalizedScore;
+      if (daysUntilConcert <= 30) {
+        final timeScore = 1.0 - (daysUntilConcert / 30.0);
+        concert.score += timeScore * 2.0;
       }
 
       return concert;
     }).toList();
   }
 
-  List<Concert> _applyPriceSensitivity(
-      List<Concert> concerts, double sensitivity) {
-    if (concerts.isEmpty) return concerts;
-
-    final prices = concerts
-        .where((c) => c.minPrice != null && c.minPrice! > 0)
-        .map((c) => c.minPrice!)
-        .toList();
-
-    if (prices.isEmpty) return concerts;
-
-    prices.sort();
-    final minPrice = prices.first;
-    final maxPrice = prices.last;
-    final priceRange = maxPrice - minPrice;
-
-    if (priceRange <= 0) return concerts;
-
-    final threshold = minPrice + (priceRange * sensitivity);
-
+  List<Concert> _applyGenreScoring(
+    List<Concert> concerts,
+    Map<String, double> genreWeights,
+  ) {
     return concerts.map((concert) {
-      if (concert.minPrice != null && concert.minPrice! > 0) {
-        final priceScore =
-            5 * (1 - ((concert.minPrice! - minPrice) / priceRange));
-        concert.score += priceScore;
+      double genreScore = 0;
+      int matchingGenres = 0;
 
-        if (sensitivity < 0.3 && concert.minPrice! > threshold) {
-          concert.score -= 5;
+      for (final genre in concert.genres) {
+        if (genreWeights.containsKey(genre)) {
+          genreScore += genreWeights[genre]!;
+          matchingGenres++;
         }
       }
+
+      if (matchingGenres > 0) {
+        final normalizedScore = (genreScore / matchingGenres) * 3;
+        concert.score += normalizedScore;
+      }
+
       return concert;
     }).toList();
   }
@@ -381,7 +336,7 @@ class ConcertRecommendationService {
 
     for (final concert in concerts) {
       final key =
-          '${concert.artist.id}_${concert.venue.id}_${DateUtils.formatDate(concert.startDateTime, 'yyyy-MM-dd')}';
+          '${concert.artist.id}_${concert.venue}_${DateUtils.formatDate(concert.startDateTime, 'yyyy-MM-dd')}';
 
       if (!uniqueConcerts.containsKey(key) ||
           concert.score > uniqueConcerts[key]!.score) {

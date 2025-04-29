@@ -2,11 +2,39 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:nextbigthing/models/concert.dart';
+import 'package:path/path.dart' as p;
+
+class TicketmasterImageCacheManager extends CacheManager {
+  static const key = 'ticketmasterImages';
+  static const Duration maxAge = Duration(days: 7);
+
+  static final TicketmasterImageCacheManager _instance =
+      TicketmasterImageCacheManager._();
+
+  factory TicketmasterImageCacheManager() {
+    return _instance;
+  }
+
+  TicketmasterImageCacheManager._()
+      : super(Config(
+          key,
+          stalePeriod: maxAge,
+          maxNrOfCacheObjects: 100,
+          repo: JsonCacheInfoRepository(databaseName: key),
+          fileService: HttpFileService(),
+        ));
+}
 
 class CacheService {
   static CacheService? _instance;
   late final SharedPreferences _prefs;
   final DefaultCacheManager _cacheManager = DefaultCacheManager();
+  final TicketmasterImageCacheManager _imageCacheManager =
+      TicketmasterImageCacheManager();
+
+  static const String _locationKey = 'user_location';
+  static const String _locationTypeKey = 'location_type';
+  static const String _maxDistanceKey = 'max_distance';
 
   CacheService._({required SharedPreferences prefs}) : _prefs = prefs;
 
@@ -16,6 +44,24 @@ class CacheService {
       _instance = CacheService._(prefs: prefs);
     }
     return _instance!;
+  }
+
+  Future<void> saveLocationSettings({
+    required String locationType,
+    required String location,
+    required double maxDistance,
+  }) async {
+    await _prefs.setString(_locationTypeKey, locationType);
+    await _prefs.setString(_locationKey, location);
+    await _prefs.setDouble(_maxDistanceKey, maxDistance);
+  }
+
+  Future<Map<String, dynamic>> getLocationSettings() async {
+    return {
+      'locationType': _prefs.getString(_locationTypeKey) ?? 'Current Location',
+      'location': _prefs.getString(_locationKey) ?? '',
+      'maxDistance': _prefs.getDouble(_maxDistanceKey) ?? 50.0,
+    };
   }
 
   Future<T?> get<T>(String key) async {
@@ -103,6 +149,7 @@ class CacheService {
   Future<bool> clear() async {
     try {
       await _cacheManager.emptyCache();
+      await _imageCacheManager.emptyCache();
       return await _prefs.clear();
     } catch (e) {
       print('Error clearing cache: $e');
@@ -123,6 +170,19 @@ class CacheService {
     }
   }
 
+  Future<String?> cacheImage(String url) async {
+    try {
+      final fileInfo = await _imageCacheManager.downloadFile(
+        url,
+        key: p.basename(url),
+      );
+      return fileInfo.file.path;
+    } catch (e) {
+      print('Error caching image: $e');
+      return null;
+    }
+  }
+
   Future<bool> containsKey(String key) async {
     if (!_prefs.containsKey(key)) return false;
 
@@ -133,5 +193,47 @@ class CacheService {
     final now = DateTime.now().millisecondsSinceEpoch;
 
     return now <= expiryTimestamp;
+  }
+
+  Future<bool> isImageCached(String url) async {
+    try {
+      final file = await _imageCacheManager.getFileFromCache(p.basename(url));
+      return file != null;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  Future<bool> clearRecommendations() async {
+    try {
+      final keys = _prefs.getKeys();
+
+      final recommendationKeys = keys.where((key) =>
+          key.contains('recommendations') ||
+          key.contains('concert_recommendations'));
+
+      for (final key in recommendationKeys) {
+        await _prefs.remove(key);
+      }
+
+      await _cacheManager.emptyCache();
+      await _imageCacheManager.emptyCache();
+
+      return true;
+    } catch (e) {
+      print('Error clearing recommendations: $e');
+      return false;
+    }
+  }
+
+  Future<bool> clearCache() async {
+    try {
+      await _cacheManager.emptyCache();
+      await _imageCacheManager.emptyCache();
+      return await _prefs.clear();
+    } catch (e) {
+      print('Error clearing cache: $e');
+      return false;
+    }
   }
 }

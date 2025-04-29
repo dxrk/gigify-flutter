@@ -32,10 +32,8 @@ class TicketmasterAPI {
       final queryParams = {
         'keyword': artistName,
         'apikey': apiKey,
-        // 'size': size.toString(), // Uncomment if needed
       };
 
-      // Optional city and radius filtering
       // if (city != null) {
       //   queryParams['city'] = city;
       //   queryParams['radius'] = radius.toString();
@@ -49,7 +47,24 @@ class TicketmasterAPI {
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         if (data['_embedded'] != null && data['_embedded']['events'] != null) {
-          return List<Map<String, dynamic>>.from(data['_embedded']['events']);
+          final events =
+              List<Map<String, dynamic>>.from(data['_embedded']['events']);
+
+          // Process images to ensure we have the best quality
+          for (var event in events) {
+            if (event.containsKey('images')) {
+              final images = event['images'] as List<dynamic>;
+              if (images.isNotEmpty) {
+                // Sort images by width to get the highest quality
+                images.sort(
+                    (a, b) => (b['width'] as int).compareTo(a['width'] as int));
+                // Use the first (highest quality) image
+                event['imageUrl'] = images[0]['url'];
+              }
+            }
+          }
+
+          return events;
         }
       }
       return [];
