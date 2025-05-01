@@ -2,6 +2,7 @@
 // TODO: Add "no results" for home page
 // TODO: App icon and splash screen
 // TODO: Do we want better placeholder images?
+// TODO: The current "custom location" placeholder text has lat/long. We should probably change that
 
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
