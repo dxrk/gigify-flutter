@@ -8,6 +8,8 @@ import 'package:nextbigthing/models/artist.dart';
 import 'package:nextbigthing/pages/concert_details_page.dart';
 import 'package:nextbigthing/services/favorites/favorites_service.dart';
 import 'package:nextbigthing/pages/all_recommendations_page.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:geocoding/geocoding.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -104,6 +106,57 @@ class _HomePageState extends State<HomePage>
       final concertService = await ConcertRecommendationService.initialize();
       final cacheService = await CacheService.initialize();
       final locationSettings = await cacheService.getLocationSettings();
+
+      if (locationSettings['locationType'] == 'Current Location') {
+        try {
+          bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+          if (!serviceEnabled) {
+            print('Location services are disabled');
+            return;
+          }
+
+          final permission = await Geolocator.checkPermission();
+          if (permission == LocationPermission.denied) {
+            final requestPermission = await Geolocator.requestPermission();
+            if (requestPermission == LocationPermission.denied) {
+              print('Location permission denied');
+              return;
+            }
+          }
+
+          if (permission == LocationPermission.deniedForever) {
+            print('Location permissions permanently denied');
+            return;
+          }
+
+          final position = await Geolocator.getCurrentPosition(
+            desiredAccuracy: LocationAccuracy.high,
+            timeLimit: const Duration(seconds: 10),
+          );
+
+          final placemarks = await placemarkFromCoordinates(
+            position.latitude,
+            position.longitude,
+          );
+
+          if (placemarks.isNotEmpty) {
+            final place = placemarks.first;
+            final location = {
+              'details': '${place.locality}, ${place.administrativeArea}',
+              'latitude': position.latitude,
+              'longitude': position.longitude,
+            };
+            await cacheService.saveLocationSettings(
+              locationType: 'Current Location',
+              location: location,
+              maxDistance: locationSettings['maxDistance'],
+            );
+            locationSettings['location'] = location;
+          }
+        } catch (e) {
+          print('Error getting current location: $e');
+        }
+      }
 
       final location = {
         'details': locationSettings['location']['details'],
