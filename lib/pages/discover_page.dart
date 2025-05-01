@@ -5,6 +5,7 @@ import 'package:nextbigthing/services/spotify/spotify_auth.dart';
 import 'package:nextbigthing/services/cache/cache_service.dart';
 import 'package:nextbigthing/pages/concert_details_page.dart';
 import 'package:nextbigthing/services/ticketmaster/ticketmaster_api.dart';
+import 'package:nextbigthing/services/favorites/favorites_service.dart';
 
 class DiscoverPage extends StatefulWidget {
   const DiscoverPage({super.key});
@@ -32,11 +33,7 @@ class DiscoverPage extends StatefulWidget {
 class _DiscoverPageState extends State<DiscoverPage> {
   List<Concert> _concerts = [];
   List<Concert> _allConcerts = [];
-  final List<String> _filters = [
-    'Recommended',
-    'Discovery',
-    'This Weekend',
-  ];
+  final List<String> _filters = ['Recommended', 'Discovery', 'This Weekend'];
   String _selectedFilter = 'Recommended';
   bool _isLoading = true;
   final TextEditingController _searchController = TextEditingController();
@@ -74,7 +71,9 @@ class _DiscoverPageState extends State<DiscoverPage> {
       final locationSettings = await cacheService.getLocationSettings();
 
       final location = {
-        'city': locationSettings['location'].toString(),
+        'details': locationSettings['location']['details'],
+        'latitude': locationSettings['location']['latitude'],
+        'longitude': locationSettings['location']['longitude'],
         'type': locationSettings['locationType'].toString(),
       };
 
@@ -119,15 +118,15 @@ class _DiscoverPageState extends State<DiscoverPage> {
       final locationSettings = await cacheService.getLocationSettings();
 
       final location = {
-        'city': locationSettings['location'].toString(),
+        'details': locationSettings['location']['details'],
+        'latitude': locationSettings['location']['latitude'],
+        'longitude': locationSettings['location']['longitude'],
         'type': locationSettings['locationType'].toString(),
       };
 
-      print(location);
-
       final events = await ticketmasterApi.searchEvents(
         artistName: query,
-        city: location['city'],
+        location: location,
         radius: locationSettings['maxDistance'].toInt(),
       );
 
@@ -165,9 +164,11 @@ class _DiscoverPageState extends State<DiscoverPage> {
           final now = DateTime.now();
           final endOfWeekend = now.add(const Duration(days: 7));
           _concerts = concertsToFilter
-              .where((c) =>
-                  c.startDateTime.isAfter(now) &&
-                  c.startDateTime.isBefore(endOfWeekend))
+              .where(
+                (c) =>
+                    c.startDateTime.isAfter(now) &&
+                    c.startDateTime.isBefore(endOfWeekend),
+              )
               .toList();
           break;
         default:
@@ -185,12 +186,6 @@ class _DiscoverPageState extends State<DiscoverPage> {
             'Gigify.',
             style: TextStyle(fontWeight: FontWeight.bold),
           ),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.notifications_outlined),
-              onPressed: () {},
-            ),
-          ],
         ),
         body: _isLoading
             ? const Center(child: CircularProgressIndicator())
@@ -243,12 +238,16 @@ class _DiscoverPageState extends State<DiscoverPage> {
                         controller: _searchController,
                         decoration: InputDecoration(
                           hintText: 'Search for concerts...',
-                          prefixIcon:
-                              const Icon(Icons.search, color: Colors.grey),
+                          prefixIcon: const Icon(
+                            Icons.search,
+                            color: Colors.grey,
+                          ),
                           suffixIcon: _searchController.text.isNotEmpty
                               ? IconButton(
-                                  icon: const Icon(Icons.clear,
-                                      color: Colors.grey),
+                                  icon: const Icon(
+                                    Icons.clear,
+                                    color: Colors.grey,
+                                  ),
                                   onPressed: () {
                                     _searchController.clear();
                                     _searchConcerts('');
@@ -261,8 +260,9 @@ class _DiscoverPageState extends State<DiscoverPage> {
                           ),
                           filled: true,
                           fillColor: const Color(0xFF272727),
-                          contentPadding:
-                              const EdgeInsets.symmetric(vertical: 4),
+                          contentPadding: const EdgeInsets.symmetric(
+                            vertical: 4,
+                          ),
                         ),
                         onSubmitted: _searchConcerts,
                       ),
@@ -271,7 +271,9 @@ class _DiscoverPageState extends State<DiscoverPage> {
                     Text(
                       _isSearching ? 'Search Results' : '',
                       style: const TextStyle(
-                          fontSize: 20, fontWeight: FontWeight.bold),
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(height: 12),
                     Expanded(
@@ -282,7 +284,9 @@ class _DiscoverPageState extends State<DiscoverPage> {
                                     ? 'Search for concerts'
                                     : 'No upcoming concerts',
                                 style: TextStyle(
-                                    fontSize: 16, color: Colors.grey[400]),
+                                  fontSize: 16,
+                                  color: Colors.grey[400],
+                                ),
                               ),
                             )
                           : ListView.builder(
@@ -295,7 +299,9 @@ class _DiscoverPageState extends State<DiscoverPage> {
                                     ConcertDetailsPage.route(concert),
                                   ),
                                   child: Card(
-                                    margin: const EdgeInsets.only(bottom: 12),
+                                    margin: const EdgeInsets.only(
+                                      bottom: 12,
+                                    ),
                                     elevation: 0,
                                     child: Padding(
                                       padding: const EdgeInsets.all(12.0),
@@ -312,11 +318,13 @@ class _DiscoverPageState extends State<DiscoverPage> {
                                                   decoration: BoxDecoration(
                                                     borderRadius:
                                                         BorderRadius.circular(
-                                                            10),
+                                                      10,
+                                                    ),
                                                     image: DecorationImage(
                                                       image: snapshot.data ??
                                                           const NetworkImage(
-                                                              'https://placehold.co/100x100.png'),
+                                                            'https://placehold.co/100x100.png',
+                                                          ),
                                                       fit: BoxFit.cover,
                                                     ),
                                                   ),
@@ -357,12 +365,35 @@ class _DiscoverPageState extends State<DiscoverPage> {
                                               ],
                                             ),
                                           ),
-                                          IconButton(
-                                            icon: const Icon(
-                                              Icons.favorite_border,
-                                              color: Colors.purpleAccent,
-                                            ),
-                                            onPressed: () {},
+                                          FutureBuilder<bool>(
+                                            future:
+                                                FavoritesService.initialize()
+                                                    .then((service) => service
+                                                        .isConcertFavorited(
+                                                            concert.id)),
+                                            builder: (context, snapshot) {
+                                              final isFavorited =
+                                                  snapshot.data ?? false;
+                                              return IconButton(
+                                                icon: Icon(
+                                                  isFavorited
+                                                      ? Icons.favorite
+                                                      : Icons.favorite_border,
+                                                  color: isFavorited
+                                                      ? Colors.red
+                                                      : Colors.grey[400],
+                                                ),
+                                                onPressed: () async {
+                                                  final service =
+                                                      await FavoritesService
+                                                          .initialize();
+                                                  await service
+                                                      .toggleFavoriteConcert(
+                                                          concert);
+                                                  setState(() {});
+                                                },
+                                              );
+                                            },
                                           ),
                                         ],
                                       ),

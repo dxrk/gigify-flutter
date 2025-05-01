@@ -1,3 +1,8 @@
+// TODO: Figure out why the local time for the concert is off
+// TODO: Add "no results" for home page
+// TODO: App icon and splash screen
+// TODO: Do we want better placeholder images?
+
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:nextbigthing/pages/discover_page.dart';
@@ -116,7 +121,7 @@ class _MainTabControllerState extends State<MainTabController> {
       final token = await getStoredAccessToken();
       if (token == null) return;
 
-      final profile = await SpotifyApi.getUserProfile(token);
+      final profile = await SpotifyAPI.getUserProfile(token);
       if (profile['images']?.isNotEmpty == true) {
         setState(() {
           _profileImageUrl = profile['images'][0]['url'];

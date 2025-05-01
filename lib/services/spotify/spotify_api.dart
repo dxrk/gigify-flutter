@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:nextbigthing/models/artist.dart';
 import 'package:nextbigthing/utils/api_exception.dart';
 
-class SpotifyApi {
+class SpotifyAPI {
   static const String _baseUrl = 'https://api.spotify.com/v1';
   static const int _requestTimeout = 15;
 

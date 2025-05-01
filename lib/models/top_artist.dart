@@ -22,7 +22,7 @@ class _TopArtistState extends State<TopArtist> {
 
   Future<void> _loadTopArtists() async {
     try {
-      final artists = await SpotifyApi.getTopArtists(widget.accessToken);
+      final artists = await SpotifyAPI.getTopArtists(widget.accessToken);
       setState(() {
         _topArtists = artists.map((artist) => artist.toJson()).toList();
         _isLoading = false;

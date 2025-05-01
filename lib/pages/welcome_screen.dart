@@ -26,8 +26,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         final token = await getAccessToken(code);
         if (token != null) {
           await TicketmasterAPI.initialize();
-          
-          final profile = await SpotifyApi.getUserProfile(token);
+
+          final profile = await SpotifyAPI.getUserProfile(token);
           if (profile['images']?.isNotEmpty == true) {
             setState(() {
               _profileImageUrl = profile['images'][0]['url'];
@@ -37,7 +37,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           if (mounted) {
             Navigator.of(context).pushReplacement(
               MaterialPageRoute(
-                  builder: (context) => const MainTabController()),
+                builder: (context) => const MainTabController(),
+              ),
             );
           }
         }
@@ -68,10 +69,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Colors.purple.shade900,
-              Colors.black,
-            ],
+            colors: [Colors.purple.shade900, Colors.black],
           ),
         ),
         child: SafeArea(
@@ -85,11 +83,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                     backgroundImage: NetworkImage(_profileImageUrl!),
                   )
                 else
-                  const Icon(
-                    Icons.music_note,
-                    size: 100,
-                    color: Colors.white,
-                  ),
+                  const Icon(Icons.music_note, size: 100, color: Colors.white),
                 const SizedBox(height: 24),
                 const Text(
                   'Welcome to Gigify',
@@ -102,10 +96,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                 const SizedBox(height: 16),
                 const Text(
                   'Connect with Spotify to get started',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.white70,
-                  ),
+                  style: TextStyle(fontSize: 16, color: Colors.white70),
                 ),
                 const SizedBox(height: 48),
                 ElevatedButton(

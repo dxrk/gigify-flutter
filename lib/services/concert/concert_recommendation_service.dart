@@ -1,10 +1,3 @@
-// TODO: "Recommended" stops displaying after you click on the other tabs
-// TODO: Location services (including on TicketMaster's end) aren't fully functional
-//       - Figure out why TicketMaster isn't taking the location data
-//       - Pull location when doing the query in the al
-// TODO: Update the stats on the profile page – allow users to "follow artists" and "add concerts"
-// TODO: Fix concert info not displaying once cached
-
 import 'package:nextbigthing/services/spotify/spotify_api.dart';
 import 'package:nextbigthing/services/ticketmaster/ticketmaster_api.dart';
 import 'package:nextbigthing/services/cache/cache_service.dart';
@@ -38,7 +31,7 @@ class ConcertRecommendationService {
 
   Future<Map<String, List<Concert>>> getConcertRecommendations({
     required String accessToken,
-    required Map<String, String> location,
+    required Map<String, dynamic> location,
     int radius = 50,
     int searchPeriod = _defaultSearchLookAheadDays,
     int limit = 20,
@@ -47,7 +40,7 @@ class ConcertRecommendationService {
   }) async {
     try {
       print(
-          'Starting concert recommendation process for location: ${location['city']}');
+          'Starting concert recommendation process for location: ${location['details']}');
 
       final String cacheKey = _generateCacheKey(
         accessToken: accessToken,
@@ -70,10 +63,10 @@ class ConcertRecommendationService {
       }
 
       final results = await Future.wait([
-        SpotifyApi.getTopArtists(accessToken, limit: 50),
-        SpotifyApi.getFollowedArtists(accessToken, limit: 50),
-        SpotifyApi.getRecentlyPlayed(accessToken, limit: 50),
-        SpotifyApi.getUserPreferences(accessToken),
+        SpotifyAPI.getTopArtists(accessToken, limit: 50),
+        SpotifyAPI.getFollowedArtists(accessToken, limit: 50),
+        SpotifyAPI.getRecentlyPlayed(accessToken, limit: 50),
+        SpotifyAPI.getUserPreferences(accessToken),
       ]);
 
       final topArtists = results[0] as List<Artist>;
@@ -160,7 +153,7 @@ class ConcertRecommendationService {
             try {
               final results = await _ticketmasterApi.getArtistEvents(
                 artistName: artist.name,
-                city: location['city'],
+                location: location,
                 radius: radius,
               );
 
@@ -196,6 +189,9 @@ class ConcertRecommendationService {
           final json = concert.toJson();
           if (concert.venue != 'Unknown Venue') {
             json['venue'] = concert.venue;
+          }
+          if (concert.ticketUrl != null) {
+            json['url'] = concert.ticketUrl;
           }
           return json;
         }).toList();
@@ -413,15 +409,108 @@ class ConcertRecommendationService {
 
   String _generateCacheKey({
     required String accessToken,
-    required Map<String, String> location,
+    required Map<String, dynamic> location,
     required int radius,
     required int searchPeriod,
   }) {
     final locationString =
-        location.entries.map((e) => '${e.key}:${e.value}').join('_');
-
+        '${location['details']}_${location['latitude']}_${location['longitude']}';
     final tokenPrefix = accessToken.substring(0, 8);
-
     return 'concert_recommendations_${tokenPrefix}_${locationString}_${radius}_$searchPeriod';
+  }
+
+  Future<Concert?> getFeaturedConcert({
+    required String accessToken,
+    required Map<String, dynamic> location,
+    int radius = 50,
+    int searchPeriod = _defaultSearchLookAheadDays,
+  }) async {
+    try {
+      print('Finding featured concert for location: ${location['details']}');
+
+      final String cacheKey = 'featured_concert_${_generateCacheKey(
+        accessToken: accessToken,
+        location: location,
+        radius: radius,
+        searchPeriod: searchPeriod,
+      )}';
+
+      final cachedConcert =
+          await _cacheService.get<Map<String, dynamic>>(cacheKey);
+      if (cachedConcert != null) {
+        print('Returning cached featured concert');
+        return Concert.fromJson(cachedConcert);
+      }
+
+      final results = await Future.wait([
+        SpotifyAPI.getTopArtists(accessToken, limit: 50),
+        SpotifyAPI.getUserPreferences(accessToken),
+      ]);
+
+      final topArtists = results[0] as List<Artist>;
+      final userPreferences = results[1] as Map<String, dynamic>;
+
+      final Set<String> userGenres = {};
+      for (var artist in topArtists) {
+        userGenres.addAll(artist.genres);
+      }
+      if (userPreferences.containsKey('genres')) {
+        userGenres.addAll(
+            (userPreferences['genres'] as List<dynamic>).cast<String>());
+      }
+
+      final events = await _ticketmasterApi.searchEvents(
+        artistName: '',
+        location: location,
+        radius: radius,
+      );
+
+      if (events.isEmpty) {
+        return null;
+      }
+
+      final now = DateTime.now();
+      final concerts = events
+          .map((e) => Concert.fromJson(e))
+          .where((c) => c.startDateTime.isAfter(now))
+          .toList();
+
+      if (concerts.isEmpty) {
+        return null;
+      }
+
+      for (var concert in concerts) {
+        double differenceScore = 0.0;
+
+        for (final genre in concert.genres) {
+          if (!userGenres.contains(genre)) {
+            differenceScore += 1.0;
+          }
+        }
+
+        if (concert.genres.isNotEmpty) {
+          concert.score = (differenceScore / concert.genres.length) * 5.0;
+        }
+
+        final daysUntilConcert = concert.startDateTime.difference(now).inDays;
+        if (daysUntilConcert <= 30) {
+          concert.score += (1.0 - (daysUntilConcert / 30.0)) * 2.0;
+        }
+      }
+
+      concerts.sort((a, b) => b.score.compareTo(a.score));
+      final featuredConcert = concerts.first;
+
+      await _cacheService.set(
+        cacheKey,
+        featuredConcert.toJson(),
+        Duration(hours: _cacheDurationHours),
+      );
+
+      return featuredConcert;
+    } catch (e) {
+      print('Error getting featured concert: $e');
+      return null;
+    }
   }
 }

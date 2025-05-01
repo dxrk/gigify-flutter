@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:nextbigthing/models/concert.dart';
+import 'package:georange/georange.dart';
 
 class TicketmasterAPI {
   static const String baseUrl = 'https://app.ticketmaster.com/discovery/v2';
@@ -24,41 +25,52 @@ class TicketmasterAPI {
 
   Future<List<Map<String, dynamic>>> searchEvents({
     required String artistName,
-    String? city,
+    Map<String, dynamic>? location,
     int radius = 50,
     int size = 10,
   }) async {
     try {
+      if (artistName == 'Unknown' || location == null) {
+        return [];
+      }
+
       final queryParams = {
         'keyword': artistName,
         'apikey': apiKey,
+        'radius': radius.toString(),
+        'unit': 'miles',
       };
 
-      // if (city != null) {
-      //   queryParams['city'] = city;
-      //   queryParams['radius'] = radius.toString();
-      //   queryParams['unit'] = 'miles';
-      // }
+      if (location['latitude'] != null && location['longitude'] != null) {
+        GeoRange georange = GeoRange();
 
-      final uri = Uri.parse('$baseUrl/events.json')
-          .replace(queryParameters: queryParams);
+        var encoded = georange.encode(
+          location['latitude'] as double,
+          location['longitude'] as double,
+        );
+
+        queryParams['geoPoint'] = encoded;
+      }
+
+      final uri = Uri.parse(
+        '$baseUrl/events.json',
+      ).replace(queryParameters: queryParams);
       final response = await http.get(uri);
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         if (data['_embedded'] != null && data['_embedded']['events'] != null) {
-          final events =
-              List<Map<String, dynamic>>.from(data['_embedded']['events']);
+          final events = List<Map<String, dynamic>>.from(
+            data['_embedded']['events'],
+          );
 
-          // Process images to ensure we have the best quality
           for (var event in events) {
             if (event.containsKey('images')) {
               final images = event['images'] as List<dynamic>;
               if (images.isNotEmpty) {
-                // Sort images by width to get the highest quality
                 images.sort(
-                    (a, b) => (b['width'] as int).compareTo(a['width'] as int));
-                // Use the first (highest quality) image
+                  (a, b) => (b['width'] as int).compareTo(a['width'] as int),
+                );
                 event['imageUrl'] = images[0]['url'];
               }
             }
@@ -76,12 +88,12 @@ class TicketmasterAPI {
 
   Future<List<Concert>> getArtistEvents({
     required String artistName,
-    String? city,
+    Map<String, dynamic>? location,
     int radius = 50,
   }) async {
     final rawEvents = await searchEvents(
       artistName: artistName,
-      city: city,
+      location: location,
       radius: radius,
     );
 

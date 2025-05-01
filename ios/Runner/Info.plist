@@ -56,5 +56,9 @@
 			<string>com.example.nextbigthing</string>
 		</dict>
 	</array>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>This app needs access to location to find concerts near you.</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>This app needs access to location to find concerts near you.</string>
 </dict>
 </plist>

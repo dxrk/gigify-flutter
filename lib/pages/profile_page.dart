@@ -8,6 +8,8 @@ import 'package:nextbigthing/pages/welcome_screen.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:nextbigthing/services/cache/cache_service.dart';
+import 'package:nextbigthing/services/favorites/favorites_service.dart';
+import 'package:nextbigthing/pages/favorited_concerts_page.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -43,7 +45,7 @@ class _ProfilePageState extends State<ProfilePage> {
   bool _showSettings = false;
   double _maxDistance = 50.0;
   String _selectedLocation = 'Current Location';
-  String _customLocation = '';
+  Map<String, dynamic> _customLocation = {};
   bool _isGettingLocation = false;
   bool _isVerifyingLocation = false;
   String? _locationError;
@@ -72,6 +74,8 @@ class _ProfilePageState extends State<ProfilePage> {
       _selectedLocation = settings['locationType'];
       _customLocation = settings['location'];
       _maxDistance = settings['maxDistance'];
+      _latitude = _customLocation['latitude'];
+      _longitude = _customLocation['longitude'];
     });
 
     if (_selectedLocation == 'Current Location') {
@@ -79,7 +83,7 @@ class _ProfilePageState extends State<ProfilePage> {
     }
 
     if (_selectedLocation == 'Custom Location') {
-      _locationController.text = _customLocation;
+      _locationController.text = _customLocation['details'] ?? '';
     }
   }
 
@@ -93,11 +97,22 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _getCurrentLocation() async {
+    if (_isGettingLocation) return;
+
     setState(() {
       _isGettingLocation = true;
       _locationError = null;
     });
+
     try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        setState(() {
+          _locationError = 'Location services are disabled';
+        });
+        return;
+      }
+
       final permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
         final requestPermission = await Geolocator.requestPermission();
@@ -109,40 +124,67 @@ class _ProfilePageState extends State<ProfilePage> {
         }
       }
 
-      final position = await Geolocator.getCurrentPosition();
+      if (permission == LocationPermission.deniedForever) {
+        setState(() {
+          _locationError = 'Location permissions permanently denied';
+        });
+        return;
+      }
+
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+        timeLimit: const Duration(seconds: 10),
+      );
+
+      if (!mounted) return;
+
       final placemarks = await placemarkFromCoordinates(
         position.latitude,
         position.longitude,
       );
 
+      if (!mounted) return;
+
       if (placemarks.isNotEmpty) {
         final place = placemarks.first;
         setState(() {
           _selectedLocation = 'Current Location';
-          _customLocation = '${place.locality}, ${place.administrativeArea}';
+          _customLocation = {
+            'details': '${place.locality}, ${place.administrativeArea}',
+            'latitude': position.latitude,
+            'longitude': position.longitude,
+          };
           _latitude = position.latitude;
           _longitude = position.longitude;
           _locationError = null;
         });
         await _saveLocationSettings();
+      } else {
+        setState(() {
+          _locationError = 'Could not determine location name';
+        });
       }
     } catch (e) {
+      if (!mounted) return;
       setState(() {
-        _locationError = 'Error getting location';
+        _locationError = 'Error getting location: ${e.toString()}';
       });
     } finally {
-      setState(() {
-        _isGettingLocation = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isGettingLocation = false;
+        });
+      }
     }
   }
 
   Future<void> _verifyCustomLocation(String location) async {
-    if (location.isEmpty) {
+    if (location.trim().isEmpty) {
       setState(() {
         _locationError = 'Please enter a location';
         _latitude = null;
         _longitude = null;
+        _customLocation = {};
       });
       return;
     }
@@ -159,6 +201,11 @@ class _ProfilePageState extends State<ProfilePage> {
         setState(() {
           _latitude = location.latitude;
           _longitude = location.longitude;
+          _customLocation = {
+            'details': location.toString(),
+            'latitude': location.latitude,
+            'longitude': location.longitude,
+          };
           _locationError = null;
         });
         await _saveLocationSettings();
@@ -171,7 +218,7 @@ class _ProfilePageState extends State<ProfilePage> {
       }
     } catch (e) {
       setState(() {
-        _locationError = 'Invalid location format';
+        _locationError = e.toString();
         _latitude = null;
         _longitude = null;
       });
@@ -191,8 +238,9 @@ class _ProfilePageState extends State<ProfilePage> {
       }
 
       _accessToken = token;
-      final profile = await SpotifyApi.getUserProfile(token);
-      final topArtists = await SpotifyApi.getTopArtists(token);
+      final profile = await SpotifyAPI.getUserProfile(token);
+      final favoritesService = await FavoritesService.initialize();
+      final stats = await favoritesService.getFavoriteStats();
 
       setState(() {
         _name = profile['display_name'] ?? 'Unknown User';
@@ -200,8 +248,8 @@ class _ProfilePageState extends State<ProfilePage> {
         _avatarUrl = profile['images']?.isNotEmpty == true
             ? profile['images'][0]['url']
             : 'https://placehold.co/100x100.png';
-        _concertCount = 12;
-        _artistCount = topArtists.length;
+        _concertCount = stats['favoriteConcerts'] ?? 0;
+        _artistCount = stats['favoriteArtists'] ?? 0;
         _isLoading = false;
       });
     } catch (e) {
@@ -214,8 +262,10 @@ class _ProfilePageState extends State<ProfilePage> {
     return SafeArea(
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Gigify.',
-              style: TextStyle(fontWeight: FontWeight.bold)),
+          title: const Text(
+            'Gigify.',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
           actions: [
             IconButton(
               icon: const Icon(Icons.settings_outlined),
@@ -231,14 +281,21 @@ class _ProfilePageState extends State<ProfilePage> {
                     if (_showSettings) _buildSettingsPanel(),
                     const SizedBox(height: 20),
                     CircleAvatar(
-                        radius: 50, backgroundImage: NetworkImage(_avatarUrl)),
+                      radius: 50,
+                      backgroundImage: NetworkImage(_avatarUrl),
+                    ),
                     const SizedBox(height: 16),
-                    Text(_name,
-                        style: const TextStyle(
-                            fontSize: 24, fontWeight: FontWeight.bold)),
-                    Text(_email,
-                        style:
-                            TextStyle(fontSize: 16, color: Colors.grey[400])),
+                    Text(
+                      _name,
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      _email,
+                      style: TextStyle(fontSize: 16, color: Colors.grey[400]),
+                    ),
                     const SizedBox(height: 32),
                     Container(
                       margin: const EdgeInsets.symmetric(horizontal: 20),
@@ -251,10 +308,18 @@ class _ProfilePageState extends State<ProfilePage> {
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
                           _buildStatColumn(
-                              _concertCount.toString(), 'Concerts'),
+                            _concertCount.toString(),
+                            'Concerts',
+                          ),
                           Container(
-                              height: 40, width: 1, color: Colors.grey[700]),
-                          _buildStatColumn(_artistCount.toString(), 'Artists'),
+                            height: 40,
+                            width: 1,
+                            color: Colors.grey[700],
+                          ),
+                          _buildStatColumn(
+                            _artistCount.toString(),
+                            'Artists',
+                          ),
                         ],
                       ),
                     ),
@@ -263,53 +328,90 @@ class _ProfilePageState extends State<ProfilePage> {
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: Column(
                         children: [
-                          _buildProfileSection(context, Icons.favorite_border,
-                              'Followed Artists', 'Check your followed artists',
-                              onTap: () => Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (context) => FollowedArtist()))),
-                          _buildProfileSection(context, Icons.history,
-                              'Concert History', 'Browse your concert history',
-                              onTap: () {}),
-                          _buildProfileSection(context, Icons.help_outline,
-                              'Help & Support', 'Contact us or read FAQs',
-                              onTap: () => Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (context) => FAQPage()))),
-                          _buildProfileSection(context, Icons.onetwothree,
-                              'Top Artists', 'View your top Spotify artists',
-                              onTap: () => Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (context) => TopArtist(
-                                          accessToken: _accessToken)))),
                           _buildProfileSection(
+                            context,
+                            Icons.history,
+                            'Favorited Concerts',
+                            'Browse your favorited concerts',
+                            onTap: () => Navigator.push(
                               context,
-                              Icons.refresh,
-                              'Reset Recommendations',
-                              'Reset your recommendations',
-                              isDestructive: true, onTap: () async {
-                            final cacheService =
-                                await CacheService.initialize();
-                            await cacheService.clearRecommendations();
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Recommendations reset'),
-                                duration: Duration(seconds: 2),
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    const FavoritedConcertsPage(),
                               ),
-                            );
-                          }),
-                          _buildProfileSection(context, Icons.logout, 'Log Out',
-                              'Sign out from your account', isDestructive: true,
-                              onTap: () async {
-                            Navigator.pushReplacement(
+                            ),
+                          ),
+                          _buildProfileSection(
+                            context,
+                            Icons.onetwothree,
+                            'Top Artists',
+                            'View your top Spotify artists',
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => TopArtist(
+                                  accessToken: _accessToken,
+                                ),
+                              ),
+                            ),
+                          ),
+                          _buildProfileSection(
+                            context,
+                            Icons.favorite_border,
+                            'Followed Artists',
+                            'Check your followed artists',
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => FollowedArtist(),
+                              ),
+                            ),
+                          ),
+                          _buildProfileSection(
+                            context,
+                            Icons.help_outline,
+                            'Help & Support',
+                            'Contact us or read FAQs',
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => FAQPage(),
+                              ),
+                            ),
+                          ),
+                          _buildProfileSection(
+                            context,
+                            Icons.refresh,
+                            'Reset Recommendations',
+                            'Reset your recommendations',
+                            isDestructive: true,
+                            onTap: () async {
+                              final cacheService =
+                                  await CacheService.initialize();
+                              await cacheService.clearRecommendations();
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Recommendations reset'),
+                                  duration: Duration(seconds: 2),
+                                ),
+                              );
+                            },
+                          ),
+                          _buildProfileSection(
+                            context,
+                            Icons.logout,
+                            'Log Out',
+                            'Sign out from your account',
+                            isDestructive: true,
+                            onTap: () async {
+                              Navigator.pushReplacement(
                                 context,
                                 MaterialPageRoute(
-                                    builder: (context) =>
-                                        const WelcomeScreen()));
-                          }),
+                                  builder: (context) => const WelcomeScreen(),
+                                ),
+                              );
+                            },
+                          ),
                         ],
                       ),
                     ),
@@ -334,22 +436,30 @@ class _ProfilePageState extends State<ProfilePage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Settings',
-                  style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.purpleAccent)),
+              const Text(
+                'Settings',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.purpleAccent,
+                ),
+              ),
               IconButton(
-                  icon: const Icon(Icons.close, color: Colors.white),
-                  onPressed: () => setState(() => _showSettings = false)),
+                icon: const Icon(Icons.close, color: Colors.white),
+                onPressed: () => setState(() => _showSettings = false),
+              ),
             ],
           ),
           const SizedBox(height: 16),
-          const Text('Max Distance for Concerts',
-              style: TextStyle(fontSize: 16, color: Colors.white)),
+          const Text(
+            'Max Distance for Concerts',
+            style: TextStyle(fontSize: 16, color: Colors.white),
+          ),
           const SizedBox(height: 8),
-          Text('${_maxDistance.toInt()} miles',
-              style: TextStyle(fontSize: 14, color: Colors.grey[400])),
+          Text(
+            '${_maxDistance.toInt()} miles',
+            style: TextStyle(fontSize: 14, color: Colors.grey[400]),
+          ),
           Slider(
             value: _maxDistance,
             min: 10,
@@ -365,17 +475,23 @@ class _ProfilePageState extends State<ProfilePage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('10 miles',
-                  style: TextStyle(color: Colors.grey[400], fontSize: 12)),
-              Text('500 miles',
-                  style: TextStyle(color: Colors.grey[400], fontSize: 12)),
+              Text(
+                '10 miles',
+                style: TextStyle(color: Colors.grey[400], fontSize: 12),
+              ),
+              Text(
+                '500 miles',
+                style: TextStyle(color: Colors.grey[400], fontSize: 12),
+              ),
             ],
           ),
           const SizedBox(height: 16),
           const Divider(color: Colors.grey),
           const SizedBox(height: 16),
-          const Text('Location Settings',
-              style: TextStyle(fontSize: 16, color: Colors.white)),
+          const Text(
+            'Location Settings',
+            style: TextStyle(fontSize: 16, color: Colors.white),
+          ),
           const SizedBox(height: 8),
           Row(
             children: [
@@ -384,10 +500,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   value: _selectedLocation,
                   dropdownColor: const Color(0xFF272727),
                   style: const TextStyle(color: Colors.white),
-                  underline: Container(
-                    height: 1,
-                    color: Colors.grey[700],
-                  ),
+                  underline: Container(height: 1, color: Colors.grey[700]),
                   items: const [
                     DropdownMenuItem(
                       value: 'Current Location',
@@ -404,7 +517,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       if (value == 'Current Location') {
                         _getCurrentLocation();
                       } else {
-                        _customLocation = '';
+                        _customLocation = {};
                         _latitude = null;
                         _longitude = null;
                         _locationError = null;
@@ -423,10 +536,14 @@ class _ProfilePageState extends State<ProfilePage> {
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
                             valueColor: AlwaysStoppedAnimation<Color>(
-                                Colors.purpleAccent),
+                              Colors.purpleAccent,
+                            ),
                           ),
                         )
-                      : const Icon(Icons.refresh, color: Colors.purpleAccent),
+                      : const Icon(
+                          Icons.refresh,
+                          color: Colors.purpleAccent,
+                        ),
                   onPressed: _isGettingLocation ? null : _getCurrentLocation,
                 ),
             ],
@@ -458,20 +575,37 @@ class _ProfilePageState extends State<ProfilePage> {
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
                                   valueColor: AlwaysStoppedAnimation<Color>(
-                                      Colors.purpleAccent),
+                                    Colors.purpleAccent,
+                                  ),
                                 ),
                               ),
                             )
                           : IconButton(
-                              icon: const Icon(Icons.check_circle_outline,
-                                  color: Colors.purpleAccent),
+                              icon: const Icon(
+                                Icons.check_circle_outline,
+                                color: Colors.purpleAccent,
+                              ),
                               onPressed: () => _verifyCustomLocation(
-                                  _locationController.text),
+                                _locationController.text,
+                              ),
                             ),
                     ),
                     onChanged: (value) {
+                      if (value.isEmpty) {
+                        setState(() {
+                          _customLocation = {};
+                          _locationError = null;
+                          _latitude = null;
+                          _longitude = null;
+                        });
+                        return;
+                      }
                       setState(() {
-                        _customLocation = value;
+                        _customLocation = {
+                          'details': value,
+                          'latitude': null,
+                          'longitude': null,
+                        };
                         _locationError = null;
                         _latitude = null;
                         _longitude = null;
@@ -485,16 +619,20 @@ class _ProfilePageState extends State<ProfilePage> {
                       child: Text(
                         _locationError!,
                         style: const TextStyle(
-                            color: Colors.redAccent, fontSize: 12),
+                          color: Colors.redAccent,
+                          fontSize: 12,
+                        ),
                       ),
                     ),
                   if (_latitude != null && _longitude != null)
                     Padding(
                       padding: const EdgeInsets.only(top: 4),
                       child: Text(
-                        'Location verified: ${_customLocation}',
-                        style:
-                            TextStyle(color: Colors.green[400], fontSize: 12),
+                        'Location verified!',
+                        style: TextStyle(
+                          color: Colors.green[400],
+                          fontSize: 12,
+                        ),
                       ),
                     ),
                 ],
@@ -512,7 +650,8 @@ class _ProfilePageState extends State<ProfilePage> {
               backgroundColor: Colors.purpleAccent,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10)),
+                borderRadius: BorderRadius.circular(10),
+              ),
               minimumSize: const Size(double.infinity, 50),
             ),
             child: const Text('Save Settings'),
@@ -524,9 +663,7 @@ class _ProfilePageState extends State<ProfilePage> {
               await cacheService.clearCache();
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => const WelcomeScreen(),
-                ),
+                MaterialPageRoute(builder: (context) => const WelcomeScreen()),
               );
             },
             style: ElevatedButton.styleFrom(
@@ -547,8 +684,10 @@ class _ProfilePageState extends State<ProfilePage> {
   Column _buildStatColumn(String count, String label) {
     return Column(
       children: [
-        Text(count,
-            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+        Text(
+          count,
+          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+        ),
         const SizedBox(height: 4),
         Text(label, style: TextStyle(fontSize: 14, color: Colors.grey[400])),
       ],
@@ -556,8 +695,13 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Widget _buildProfileSection(
-      BuildContext context, IconData icon, String title, String subtitle,
-      {bool isDestructive = false, required VoidCallback onTap}) {
+    BuildContext context,
+    IconData icon,
+    String title,
+    String subtitle, {
+    bool isDestructive = false,
+    required VoidCallback onTap,
+  }) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
@@ -565,16 +709,27 @@ class _ProfilePageState extends State<ProfilePage> {
         borderRadius: BorderRadius.circular(12),
       ),
       child: ListTile(
-        leading: Icon(icon,
-            color: isDestructive ? Colors.redAccent : Colors.purpleAccent),
-        title: Text(title,
-            style: TextStyle(
-                color: isDestructive ? Colors.redAccent : Colors.white)),
-        subtitle: Text(subtitle,
-            style: TextStyle(color: Colors.grey[400], fontSize: 12)),
+        leading: Icon(
+          icon,
+          color: isDestructive ? Colors.redAccent : Colors.purpleAccent,
+        ),
+        title: Text(
+          title,
+          style: TextStyle(
+            color: isDestructive ? Colors.redAccent : Colors.white,
+          ),
+        ),
+        subtitle: Text(
+          subtitle,
+          style: TextStyle(color: Colors.grey[400], fontSize: 12),
+        ),
         trailing: isDestructive
             ? null
-            : const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+            : const Icon(
+                Icons.arrow_forward_ios,
+                size: 16,
+                color: Colors.grey,
+              ),
         onTap: onTap,
       ),
     );

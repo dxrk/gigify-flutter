@@ -48,18 +48,32 @@ class CacheService {
 
   Future<void> saveLocationSettings({
     required String locationType,
-    required String location,
+    required Map<String, dynamic> location,
     required double maxDistance,
   }) async {
     await _prefs.setString(_locationTypeKey, locationType);
-    await _prefs.setString(_locationKey, location);
+    await _prefs.setString(_locationKey, location['details'] ?? '');
+    if (location['latitude'] != null && location['longitude'] != null) {
+      await _prefs.setDouble('${_locationKey}_lat', location['latitude']);
+      await _prefs.setDouble('${_locationKey}_lng', location['longitude']);
+    }
     await _prefs.setDouble(_maxDistanceKey, maxDistance);
   }
 
   Future<Map<String, dynamic>> getLocationSettings() async {
+    final locationString = _prefs.getString(_locationKey) ?? '';
+    final latitude = _prefs.getDouble('${_locationKey}_lat');
+    final longitude = _prefs.getDouble('${_locationKey}_lng');
+
+    Map<String, dynamic> locationData = {
+      'details': locationString,
+      'latitude': latitude,
+      'longitude': longitude,
+    };
+
     return {
       'locationType': _prefs.getString(_locationTypeKey) ?? 'Current Location',
-      'location': _prefs.getString(_locationKey) ?? '',
+      'location': locationData,
       'maxDistance': _prefs.getDouble(_maxDistanceKey) ?? 50.0,
     };
   }

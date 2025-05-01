@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:nextbigthing/models/concert.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:nextbigthing/services/favorites/favorites_service.dart';
 
-class ConcertDetailsPage extends StatelessWidget {
+class ConcertDetailsPage extends StatefulWidget {
   final Concert concert;
 
   const ConcertDetailsPage({super.key, required this.concert});
@@ -17,9 +18,14 @@ class ConcertDetailsPage extends StatelessWidget {
     );
   }
 
+  @override
+  State<ConcertDetailsPage> createState() => _ConcertDetailsPageState();
+}
+
+class _ConcertDetailsPageState extends State<ConcertDetailsPage> {
   Future<void> _launchTicketUrl() async {
-    if (concert.ticketUrl != null) {
-      final uri = Uri.parse(concert.ticketUrl!);
+    if (widget.concert.ticketUrl != null) {
+      final uri = Uri.parse(widget.concert.ticketUrl!);
       if (await canLaunchUrl(uri)) {
         await launchUrl(uri);
       }
@@ -34,9 +40,29 @@ class ConcertDetailsPage extends StatelessWidget {
           SliverAppBar(
             expandedHeight: 300,
             pinned: true,
+            actions: [
+              FutureBuilder<bool>(
+                future: FavoritesService.initialize().then(
+                    (service) => service.isConcertFavorited(widget.concert.id)),
+                builder: (context, snapshot) {
+                  final isFavorited = snapshot.data ?? false;
+                  return IconButton(
+                    icon: Icon(
+                      isFavorited ? Icons.favorite : Icons.favorite_border,
+                      color: isFavorited ? Colors.red : Colors.white,
+                    ),
+                    onPressed: () async {
+                      final service = await FavoritesService.initialize();
+                      await service.toggleFavoriteConcert(widget.concert);
+                      setState(() {});
+                    },
+                  );
+                },
+              ),
+            ],
             flexibleSpace: FlexibleSpaceBar(
               background: FutureBuilder<ImageProvider>(
-                future: concert.getImageProvider(),
+                future: widget.concert.getImageProvider(),
                 builder: (context, snapshot) {
                   return Container(
                     decoration: BoxDecoration(
@@ -63,7 +89,7 @@ class ConcertDetailsPage extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    concert.name,
+                    widget.concert.name,
                     style: const TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
@@ -71,7 +97,7 @@ class ConcertDetailsPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    concert.artist.name,
+                    widget.concert.artist.name,
                     style: const TextStyle(
                       fontSize: 18,
                       color: Colors.purpleAccent,
@@ -84,11 +110,12 @@ class ConcertDetailsPage extends StatelessWidget {
                       _buildInfoRow(
                         Icons.calendar_today,
                         DateFormat('EEEE, MMMM d, y')
-                            .format(concert.startDateTime),
+                            .format(widget.concert.startDateTime),
                       ),
                       _buildInfoRow(
                         Icons.access_time,
-                        DateFormat('h:mm a').format(concert.startDateTime),
+                        DateFormat('h:mm a')
+                            .format(widget.concert.startDateTime),
                       ),
                     ],
                   ),
@@ -98,34 +125,37 @@ class ConcertDetailsPage extends StatelessWidget {
                     [
                       _buildInfoRow(
                         Icons.location_on,
-                        concert.venue,
+                        widget.concert.venue,
                       ),
                     ],
                   ),
                   const SizedBox(height: 16),
-                  if (concert.minPrice != null || concert.maxPrice != null)
+                  if (widget.concert.minPrice != null ||
+                      widget.concert.maxPrice != null)
                     _buildInfoSection(
                       'Price Range',
                       [
                         _buildInfoRow(
                           Icons.attach_money,
-                          concert.minPrice != null && concert.maxPrice != null
-                              ? '\$${concert.minPrice!.toStringAsFixed(2)} - \$${concert.maxPrice!.toStringAsFixed(2)}'
-                              : concert.minPrice != null
-                                  ? 'From \$${concert.minPrice!.toStringAsFixed(2)}'
-                                  : 'Up to \$${concert.maxPrice!.toStringAsFixed(2)}',
+                          widget.concert.minPrice != null &&
+                                  widget.concert.maxPrice != null
+                              ? '\$${widget.concert.minPrice!.toStringAsFixed(2)} - \$${widget.concert.maxPrice!.toStringAsFixed(2)}'
+                              : widget.concert.minPrice != null
+                                  ? 'From \$${widget.concert.minPrice!.toStringAsFixed(2)}'
+                                  : 'Up to \$${widget.concert.maxPrice!.toStringAsFixed(2)}',
                         ),
                       ],
                     ),
-                  if (concert.minPrice != null || concert.maxPrice != null)
+                  if (widget.concert.minPrice != null ||
+                      widget.concert.maxPrice != null)
                     const SizedBox(height: 16),
-                  if (concert.genres.isNotEmpty)
+                  if (widget.concert.genres.isNotEmpty)
                     _buildInfoSection(
                       'Genres',
                       [
                         Wrap(
                           spacing: 8,
-                          children: concert.genres
+                          children: widget.concert.genres
                               .map((genre) => Chip(
                                     label: Text(genre),
                                     backgroundColor:
@@ -137,31 +167,33 @@ class ConcertDetailsPage extends StatelessWidget {
                         ),
                       ],
                     ),
-                  if (concert.genres.isNotEmpty) const SizedBox(height: 16),
-                  if (concert.description != null)
+                  if (widget.concert.genres.isNotEmpty)
+                    const SizedBox(height: 16),
+                  if (widget.concert.description != null)
                     _buildInfoSection(
                       'About',
                       [
                         Text(
-                          concert.description!,
+                          widget.concert.description!,
                           style: const TextStyle(fontSize: 16),
                         ),
                       ],
                     ),
-                  if (concert.description != null) const SizedBox(height: 16),
-                  if (concert.ageRestriction != null)
+                  if (widget.concert.description != null)
+                    const SizedBox(height: 16),
+                  if (widget.concert.ageRestriction != null)
                     _buildInfoSection(
                       'Age Restriction',
                       [
                         _buildInfoRow(
                           Icons.person,
-                          '${concert.ageRestriction}+ years',
+                          '${widget.concert.ageRestriction}+ years',
                         ),
                       ],
                     ),
-                  if (concert.ageRestriction != null)
+                  if (widget.concert.ageRestriction != null)
                     const SizedBox(height: 16),
-                  if (concert.isSoldOut)
+                  if (widget.concert.isSoldOut)
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
@@ -183,8 +215,8 @@ class ConcertDetailsPage extends StatelessWidget {
                         ],
                       ),
                     ),
-                  if (concert.isSoldOut) const SizedBox(height: 16),
-                  if (concert.ticketUrl != null)
+                  if (widget.concert.isSoldOut) const SizedBox(height: 16),
+                  if (widget.concert.ticketUrl != null)
                     ElevatedButton(
                       onPressed: _launchTicketUrl,
                       style: ElevatedButton.styleFrom(
