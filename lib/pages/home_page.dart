@@ -401,17 +401,31 @@ class _HomePageState extends State<HomePage>
                         ],
                       ),
                       const SizedBox(height: 16),
-                      SizedBox(
-                        height: 230,
-                        child: ListView.builder(
-                          scrollDirection: Axis.horizontal,
-                          itemCount: _forYou.length,
-                          itemBuilder: (context, index) {
-                            final concert = _forYou[index];
-                            return _buildConcertCard(concert, true);
-                          },
-                        ),
-                      ),
+                      _forYou.isEmpty
+                          ? Center(
+                              child: Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 20),
+                                child: Text(
+                                  'No recommendations available',
+                                  style: TextStyle(
+                                    color: Colors.grey[400],
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              ),
+                            )
+                          : SizedBox(
+                              height: 230,
+                              child: ListView.builder(
+                                scrollDirection: Axis.horizontal,
+                                itemCount: _forYou.length,
+                                itemBuilder: (context, index) {
+                                  final concert = _forYou[index];
+                                  return _buildConcertCard(concert, true);
+                                },
+                              ),
+                            ),
                       const SizedBox(height: 28),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -419,139 +433,158 @@ class _HomePageState extends State<HomePage>
                           const Text('Trending Now',
                               style: TextStyle(
                                   fontSize: 22, fontWeight: FontWeight.bold)),
-                          TextButton(
-                            onPressed: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => AllRecommendationsPage(
-                                  concerts: _allConcerts,
+                          if (_trending.isNotEmpty)
+                            TextButton(
+                              onPressed: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => AllRecommendationsPage(
+                                    concerts: _allConcerts,
+                                  ),
                                 ),
                               ),
+                              child: const Text('See All',
+                                  style: TextStyle(color: Colors.purpleAccent)),
                             ),
-                            child: const Text('See All',
-                                style: TextStyle(color: Colors.purpleAccent)),
-                          ),
                         ],
                       ),
                       const SizedBox(height: 16),
-                      GridView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          childAspectRatio: 1.0,
-                          crossAxisSpacing: 16,
-                          mainAxisSpacing: 16,
-                        ),
-                        itemCount: _trending.length,
-                        itemBuilder: (context, index) {
-                          final trending = _trending[index];
-                          final concertObject = _allConcerts.firstWhere(
-                            (concert) =>
-                                concert.artist.name == trending['artist'],
-                            orElse: () => _allConcerts[index + _forYou.length],
-                          );
-                          return GestureDetector(
-                            onTap: () => Navigator.push(
-                              context,
-                              ConcertDetailsPage.route(concertObject),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Expanded(
-                                  child: Stack(
+                      _trending.isEmpty
+                          ? Center(
+                              child: Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 20),
+                                child: Text(
+                                  'No trending concerts available',
+                                  style: TextStyle(
+                                    color: Colors.grey[400],
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              ),
+                            )
+                          : GridView.builder(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              gridDelegate:
+                                  const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 2,
+                                childAspectRatio: 1.0,
+                                crossAxisSpacing: 16,
+                                mainAxisSpacing: 16,
+                              ),
+                              itemCount: _trending.length,
+                              itemBuilder: (context, index) {
+                                final trending = _trending[index];
+                                final concertObject = _allConcerts.firstWhere(
+                                  (concert) =>
+                                      concert.artist.name == trending['artist'],
+                                  orElse: () =>
+                                      _allConcerts[index + _forYou.length],
+                                );
+                                return GestureDetector(
+                                  onTap: () => Navigator.push(
+                                    context,
+                                    ConcertDetailsPage.route(concertObject),
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
-                                      Container(
-                                        decoration: BoxDecoration(
-                                          borderRadius:
-                                              BorderRadius.circular(16),
-                                          image: DecorationImage(
-                                            image: NetworkImage(
-                                                trending['imageUrl']!),
-                                            fit: BoxFit.cover,
-                                          ),
-                                        ),
-                                      ),
-                                      Positioned(
-                                        top: 8,
-                                        right: 8,
-                                        child: FutureBuilder<bool>(
-                                          future: FavoritesService.initialize()
-                                              .then((service) =>
-                                                  service.isConcertFavorited(
-                                                      concertObject.id)),
-                                          builder: (context, snapshot) {
-                                            final isFavorited =
-                                                snapshot.data ?? false;
-                                            return Container(
-                                              width: 24,
-                                              height: 24,
+                                      Expanded(
+                                        child: Stack(
+                                          children: [
+                                            Container(
                                               decoration: BoxDecoration(
-                                                color: Colors.black
-                                                    .withOpacity(0.5),
-                                                shape: BoxShape.circle,
+                                                borderRadius:
+                                                    BorderRadius.circular(16),
+                                                image: DecorationImage(
+                                                  image: NetworkImage(
+                                                      trending['imageUrl']!),
+                                                  fit: BoxFit.cover,
+                                                ),
                                               ),
-                                              child: IconButton(
-                                                icon: Icon(
-                                                  isFavorited
-                                                      ? Icons.favorite
-                                                      : Icons.favorite_border,
-                                                  color: isFavorited
-                                                      ? Colors.red
-                                                      : Colors.white,
-                                                  size: 14,
-                                                ),
-                                                padding: EdgeInsets.zero,
-                                                constraints:
-                                                    const BoxConstraints(
-                                                  minWidth: 24,
-                                                  minHeight: 24,
-                                                ),
-                                                onPressed: () async {
-                                                  final service =
-                                                      await FavoritesService
-                                                          .initialize();
-                                                  await service
-                                                      .toggleFavoriteConcert(
-                                                          concertObject);
-                                                  setState(() {});
+                                            ),
+                                            Positioned(
+                                              top: 8,
+                                              right: 8,
+                                              child: FutureBuilder<bool>(
+                                                future: FavoritesService
+                                                        .initialize()
+                                                    .then((service) => service
+                                                        .isConcertFavorited(
+                                                            concertObject.id)),
+                                                builder: (context, snapshot) {
+                                                  final isFavorited =
+                                                      snapshot.data ?? false;
+                                                  return Container(
+                                                    width: 24,
+                                                    height: 24,
+                                                    decoration: BoxDecoration(
+                                                      color: Colors.black
+                                                          .withOpacity(0.5),
+                                                      shape: BoxShape.circle,
+                                                    ),
+                                                    child: IconButton(
+                                                      icon: Icon(
+                                                        isFavorited
+                                                            ? Icons.favorite
+                                                            : Icons
+                                                                .favorite_border,
+                                                        color: isFavorited
+                                                            ? Colors.red
+                                                            : Colors.white,
+                                                        size: 14,
+                                                      ),
+                                                      padding: EdgeInsets.zero,
+                                                      constraints:
+                                                          const BoxConstraints(
+                                                        minWidth: 24,
+                                                        minHeight: 24,
+                                                      ),
+                                                      onPressed: () async {
+                                                        final service =
+                                                            await FavoritesService
+                                                                .initialize();
+                                                        await service
+                                                            .toggleFavoriteConcert(
+                                                                concertObject);
+                                                        setState(() {});
+                                                      },
+                                                    ),
+                                                  );
                                                 },
                                               ),
-                                            );
-                                          },
+                                            ),
+                                          ],
                                         ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        trending['artist']!,
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 14,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        concertObject
+                                            .getFormattedStartTimeTruncated(),
+                                        style: TextStyle(
+                                          color: Colors.grey[400],
+                                          fontSize: 12,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
                                       ),
                                     ],
                                   ),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  trending['artist']!,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 14,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  concertObject
-                                      .getFormattedStartTimeTruncated(),
-                                  style: TextStyle(
-                                    color: Colors.grey[400],
-                                    fontSize: 12,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ],
+                                );
+                              },
                             ),
-                          );
-                        },
-                      ),
                     ],
                   ),
                 ),
