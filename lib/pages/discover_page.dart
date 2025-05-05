@@ -33,6 +33,7 @@ class DiscoverPage extends StatefulWidget {
 class _DiscoverPageState extends State<DiscoverPage> {
   List<Concert> _concerts = [];
   List<Concert> _allConcerts = [];
+  List<Concert> _searchResults = [];
   final List<String> _filters = ['Recommended', 'Discovery', 'This Week'];
   String _selectedFilter = 'Recommended';
   bool _isLoading = true;
@@ -102,6 +103,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
     if (query.isEmpty) {
       setState(() {
         _isSearching = false;
+        _searchResults = [];
         _concerts = _allConcerts;
       });
       return;
@@ -133,6 +135,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
       final concerts = events.map((e) => Concert.fromJson(e)).toList();
 
       setState(() {
+        _searchResults = concerts;
         _concerts = concerts;
         _isLoading = false;
       });
@@ -147,32 +150,32 @@ class _DiscoverPageState extends State<DiscoverPage> {
   void _filterConcerts(String filter) {
     setState(() {
       _selectedFilter = filter;
-      final concertsToFilter = _isSearching ? _concerts : _allConcerts;
 
-      switch (filter) {
-        case 'Recommended':
-          _concerts = List.from(concertsToFilter);
-          break;
-        case 'Discovery':
-          if (!_isSearching) {
-            _concerts = [];
-          } else {
-            _concerts = concertsToFilter;
-          }
-          break;
-        case 'This Week':
-          final now = DateTime.now();
-          final endOfWeekend = now.add(const Duration(days: 7));
-          _concerts = concertsToFilter
-              .where(
-                (c) =>
-                    c.startDateTime.isAfter(now) &&
-                    c.startDateTime.isBefore(endOfWeekend),
-              )
-              .toList();
-          break;
-        default:
-          _concerts = concertsToFilter;
+      if (filter == 'Recommended' || filter == 'This Week') {
+        switch (filter) {
+          case 'Recommended':
+            _concerts = List.from(_allConcerts);
+            break;
+          case 'This Week':
+            final now = DateTime.now();
+            final endOfWeekend = now.add(const Duration(days: 7));
+            _concerts = _allConcerts
+                .where(
+                  (c) =>
+                      c.startDateTime.isAfter(now) &&
+                      c.startDateTime.isBefore(endOfWeekend),
+                )
+                .toList();
+            break;
+        }
+      } else if (filter == 'Discovery') {
+        if (_searchController.text.isNotEmpty) {
+          _concerts = List.from(_searchResults);
+          _isSearching = true;
+        } else {
+          _concerts = [];
+          _isSearching = false;
+        }
       }
     });
   }
@@ -301,7 +304,19 @@ class _DiscoverPageState extends State<DiscoverPage> {
                                       ConcertDetailsPage.route(concert),
                                     );
                                     if (result == true) {
-                                      _loadConcerts();
+                                      if (_selectedFilter == 'Discovery' &&
+                                          _isSearching) {
+                                        await _loadConcerts();
+                                        _filterConcerts(_selectedFilter);
+                                        if (_searchController.text.isNotEmpty) {
+                                          await _searchConcerts(
+                                              _searchController.text);
+                                        }
+                                      } else {
+                                        setState(() {
+                                          _filterConcerts(_selectedFilter);
+                                        });
+                                      }
                                     }
                                   },
                                   child: Card(

@@ -282,10 +282,15 @@ class _HomePageState extends State<HomePage>
                       ),
                       const SizedBox(height: 24),
                       GestureDetector(
-                        onTap: () => Navigator.push(
-                          context,
-                          ConcertDetailsPage.route(_featuredConcert),
-                        ),
+                        onTap: () async {
+                          final result = await Navigator.push(
+                            context,
+                            ConcertDetailsPage.route(_featuredConcert),
+                          );
+                          if (result == true) {
+                            _loadHomeData();
+                          }
+                        },
                         child: Container(
                           height: 200,
                           decoration: BoxDecoration(
@@ -320,84 +325,142 @@ class _HomePageState extends State<HomePage>
                                     ),
                                   ),
                                 ),
-                                child: Padding(
-                                  padding: const EdgeInsets.all(20.0),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    mainAxisAlignment: MainAxisAlignment.end,
-                                    children: [
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 12,
-                                          vertical: 6,
+                                child: Stack(
+                                  children: [
+                                    Positioned(
+                                      top: 8,
+                                      right: 8,
+                                      child: FutureBuilder<bool>(
+                                        future:
+                                            FavoritesService.initialize().then(
+                                          (service) =>
+                                              service.isConcertFavorited(
+                                                  _featuredConcert.id),
                                         ),
-                                        decoration: BoxDecoration(
-                                          color: Colors.purpleAccent
-                                              .withValues(alpha: 0.3),
-                                          borderRadius: BorderRadius.circular(
-                                            20,
-                                          ),
-                                        ),
-                                        child: const Text(
-                                          'Featured',
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
+                                        builder: (context, snapshot) {
+                                          final isFavorited =
+                                              snapshot.data ?? false;
+                                          return Container(
+                                            width: 36,
+                                            height: 36,
+                                            decoration: BoxDecoration(
+                                              color: Colors.black
+                                                  .withValues(alpha: 0.5),
+                                              shape: BoxShape.circle,
+                                            ),
+                                            child: IconButton(
+                                              icon: Icon(
+                                                isFavorited
+                                                    ? Icons.favorite
+                                                    : Icons.favorite_border,
+                                                color: isFavorited
+                                                    ? Colors.red
+                                                    : Colors.white,
+                                                size: 20,
+                                              ),
+                                              padding: EdgeInsets.zero,
+                                              constraints: const BoxConstraints(
+                                                minWidth: 36,
+                                                minHeight: 36,
+                                              ),
+                                              onPressed: () async {
+                                                final service =
+                                                    await FavoritesService
+                                                        .initialize();
+                                                await service
+                                                    .toggleFavoriteConcert(
+                                                        _featuredConcert);
+                                                setState(() {});
+                                              },
+                                            ),
+                                          );
+                                        },
                                       ),
-                                      const SizedBox(height: 12),
-                                      Flexible(
-                                        child: Text(
-                                          _featuredConcert.name,
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 26,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Row(
+                                    ),
+                                    Padding(
+                                      padding: const EdgeInsets.all(20.0),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.end,
                                         children: [
-                                          const Icon(
-                                            Icons.location_on,
-                                            color: Colors.white70,
-                                            size: 16,
-                                          ),
-                                          const SizedBox(width: 4),
-                                          Text(
-                                            _featuredConcert.venue,
-                                            style: TextStyle(
-                                              color: Colors.white.withValues(
-                                                alpha: 0.9,
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 12,
+                                              vertical: 6,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: Colors.purpleAccent
+                                                  .withValues(alpha: 0.3),
+                                              borderRadius:
+                                                  BorderRadius.circular(
+                                                20,
                                               ),
-                                              fontSize: 16,
+                                            ),
+                                            child: const Text(
+                                              'Featured',
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.bold,
+                                              ),
                                             ),
                                           ),
-                                          const SizedBox(width: 16),
-                                          const Icon(
-                                            Icons.calendar_today,
-                                            color: Colors.white70,
-                                            size: 16,
-                                          ),
-                                          const SizedBox(width: 4),
-                                          Text(
-                                            _featuredConcert
-                                                .getFormattedStartTimeTruncated(),
-                                            style: TextStyle(
-                                              color: Colors.white.withValues(
-                                                alpha: 0.9,
+                                          const SizedBox(height: 12),
+                                          Flexible(
+                                            child: Text(
+                                              _featuredConcert.name,
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 26,
+                                                fontWeight: FontWeight.bold,
                                               ),
-                                              fontSize: 16,
+                                              overflow: TextOverflow.ellipsis,
                                             ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Row(
+                                            children: [
+                                              const Icon(
+                                                Icons.location_on,
+                                                color: Colors.white70,
+                                                size: 16,
+                                              ),
+                                              const SizedBox(width: 4),
+                                              Text(
+                                                _featuredConcert.venue,
+                                                style: TextStyle(
+                                                  color:
+                                                      Colors.white.withValues(
+                                                    alpha: 0.9,
+                                                  ),
+                                                  fontSize: 16,
+                                                ),
+                                              ),
+                                              const SizedBox(width: 16),
+                                              const Icon(
+                                                Icons.calendar_today,
+                                                color: Colors.white70,
+                                                size: 16,
+                                              ),
+                                              const SizedBox(width: 4),
+                                              Text(
+                                                _featuredConcert
+                                                    .getFormattedStartTimeTruncated(),
+                                                style: TextStyle(
+                                                  color:
+                                                      Colors.white.withValues(
+                                                    alpha: 0.9,
+                                                  ),
+                                                  fontSize: 16,
+                                                ),
+                                              ),
+                                            ],
                                           ),
                                         ],
                                       ),
-                                    ],
-                                  ),
+                                    ),
+                                  ],
                                 ),
                               );
                             },
