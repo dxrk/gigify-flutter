@@ -1,2 +1,0 @@
-/Users/bentalesnik/Desktop/Spring 2025/CMSC436/nextbigthing/android/app/.cxx/Debug/2u6t3n2u/x86_64/CMakeFiles/edit_cache.dir
-/Users/bentalesnik/Desktop/Spring 2025/CMSC436/nextbigthing/android/app/.cxx/Debug/2u6t3n2u/x86_64/CMakeFiles/rebuild_cache.dir
