@@ -160,7 +160,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
             _concerts = concertsToFilter;
           }
           break;
-        case 'This Weekend':
+        case 'This Week':
           final now = DateTime.now();
           final endOfWeekend = now.add(const Duration(days: 7));
           _concerts = concertsToFilter
@@ -209,7 +209,8 @@ class _DiscoverPageState extends State<DiscoverPage> {
                               child: Container(
                                 decoration: BoxDecoration(
                                   color: isSelected
-                                      ? Colors.purpleAccent.withOpacity(0.2)
+                                      ? Colors.purpleAccent
+                                          .withValues(alpha: 0.2)
                                       : Colors.transparent,
                                   borderRadius: BorderRadius.circular(20),
                                 ),

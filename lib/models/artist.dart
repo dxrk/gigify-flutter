@@ -27,11 +27,10 @@ class Artist {
       name: json['name'] as String,
       popularity: json['popularity'] as int? ?? 0,
       genres: artistGenres,
-      imageUrl:
-          json.containsKey('images') &&
-                  (json['images'] as List<dynamic>).isNotEmpty
-              ? (json['images'] as List<dynamic>)[0]['url'] as String
-              : null,
+      imageUrl: json.containsKey('images') &&
+              (json['images'] as List<dynamic>).isNotEmpty
+          ? (json['images'] as List<dynamic>)[0]['url'] as String
+          : null,
       spotifyUrl: json['external_urls']?['spotify'] as String?,
     );
   }

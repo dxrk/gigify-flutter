@@ -16,8 +16,8 @@ class ConcertRecommendationService {
   ConcertRecommendationService._({
     required TicketmasterAPI ticketmasterApi,
     required CacheService cacheService,
-  }) : _ticketmasterApi = ticketmasterApi,
-       _cacheService = cacheService;
+  })  : _ticketmasterApi = ticketmasterApi,
+        _cacheService = cacheService;
 
   static ConcertRecommendationService? _instance;
 
@@ -57,10 +57,9 @@ class ConcertRecommendationService {
           category,
           concerts,
         ) {
-          final concertList =
-              (concerts as List)
-                  .map((c) => Concert.fromJson(c as Map<String, dynamic>))
-                  .toList();
+          final concertList = (concerts as List)
+              .map((c) => Concert.fromJson(c as Map<String, dynamic>))
+              .toList();
           return MapEntry(category, concertList);
         });
         return parsed;
@@ -103,8 +102,7 @@ class ConcertRecommendationService {
 
       for (var artist in followedArtists) {
         final existingScore = artistScores[artist.id] ?? 0.0;
-        artistScores[artist.id] =
-            existingScore +
+        artistScores[artist.id] = existingScore +
             _calculateArtistScore(
               artist: artist,
               position: followedArtists.indexOf(artist),
@@ -121,8 +119,7 @@ class ConcertRecommendationService {
         final position = recentlyPlayed.indexOf(item);
 
         final recencyWeight = 1.0 - (position / recentlyPlayed.length);
-        artistScores[artist.id] =
-            existingScore +
+        artistScores[artist.id] = existingScore +
             _calculateArtistScore(
                   artist: artist,
                   position: position,
@@ -210,17 +207,16 @@ class ConcertRecommendationService {
       );
 
       final cacheData = processedResults.map((key, value) {
-        final concerts =
-            value.map((concert) {
-              final json = concert.toJson();
-              if (concert.venue != 'Unknown Venue') {
-                json['venue'] = concert.venue;
-              }
-              if (concert.ticketUrl != null) {
-                json['url'] = concert.ticketUrl;
-              }
-              return json;
-            }).toList();
+        final concerts = value.map((concert) {
+          final json = concert.toJson();
+          if (concert.venue != 'Unknown Venue') {
+            json['venue'] = concert.venue;
+          }
+          if (concert.ticketUrl != null) {
+            json['url'] = concert.ticketUrl;
+          }
+          return json;
+        }).toList();
         return MapEntry(key, concerts);
       });
 
@@ -251,11 +247,10 @@ class ConcertRecommendationService {
       );
 
       final now = DateTime.now();
-      final concerts =
-          events
-              .map((e) => Concert.fromJson(e))
-              .where((c) => c.startDateTime.isAfter(now))
-              .toList();
+      final concerts = events
+          .map((e) => Concert.fromJson(e))
+          .where((c) => c.startDateTime.isAfter(now))
+          .toList();
 
       concerts.sort((a, b) => a.startDateTime.compareTo(b.startDateTime));
       return concerts.take(limit).toList();
@@ -276,63 +271,53 @@ class ConcertRecommendationService {
       'discovery': [],
     };
 
-    final sortedEntries =
-        artistScores.entries.toList()
-          ..sort((a, b) => b.value.compareTo(a.value));
+    final sortedEntries = artistScores.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
 
-    buckets['mustSee'] =
-        sortedEntries.take(5).map((e) {
-          return topArtists.firstWhere(
-            (a) => a.id == e.key,
-            orElse:
-                () => followedArtists.firstWhere(
-                  (a) => a.id == e.key,
-                  orElse:
-                      () => Artist(
-                        id: e.key,
-                        name: 'Unknown',
-                        popularity: 0,
-                        genres: [],
-                      ),
-                ),
-          );
-        }).toList();
+    buckets['mustSee'] = sortedEntries.take(5).map((e) {
+      return topArtists.firstWhere(
+        (a) => a.id == e.key,
+        orElse: () => followedArtists.firstWhere(
+          (a) => a.id == e.key,
+          orElse: () => Artist(
+            id: e.key,
+            name: 'Unknown',
+            popularity: 0,
+            genres: [],
+          ),
+        ),
+      );
+    }).toList();
 
-    buckets['recommended'] =
-        sortedEntries.skip(5).take(15).map((e) {
-          return topArtists.firstWhere(
-            (a) => a.id == e.key,
-            orElse:
-                () => followedArtists.firstWhere(
-                  (a) => a.id == e.key,
-                  orElse:
-                      () => Artist(
-                        id: e.key,
-                        name: 'Unknown',
-                        popularity: 0,
-                        genres: [],
-                      ),
-                ),
-          );
-        }).toList();
+    buckets['recommended'] = sortedEntries.skip(5).take(15).map((e) {
+      return topArtists.firstWhere(
+        (a) => a.id == e.key,
+        orElse: () => followedArtists.firstWhere(
+          (a) => a.id == e.key,
+          orElse: () => Artist(
+            id: e.key,
+            name: 'Unknown',
+            popularity: 0,
+            genres: [],
+          ),
+        ),
+      );
+    }).toList();
 
-    buckets['discovery'] =
-        sortedEntries.skip(20).map((e) {
-          return topArtists.firstWhere(
-            (a) => a.id == e.key,
-            orElse:
-                () => followedArtists.firstWhere(
-                  (a) => a.id == e.key,
-                  orElse:
-                      () => Artist(
-                        id: e.key,
-                        name: 'Unknown',
-                        popularity: 0,
-                        genres: [],
-                      ),
-                ),
-          );
-        }).toList();
+    buckets['discovery'] = sortedEntries.skip(20).map((e) {
+      return topArtists.firstWhere(
+        (a) => a.id == e.key,
+        orElse: () => followedArtists.firstWhere(
+          (a) => a.id == e.key,
+          orElse: () => Artist(
+            id: e.key,
+            name: 'Unknown',
+            popularity: 0,
+            genres: [],
+          ),
+        ),
+      );
+    }).toList();
 
     return buckets;
   }
@@ -543,11 +528,10 @@ class ConcertRecommendationService {
       }
 
       final now = DateTime.now();
-      final concerts =
-          events
-              .map((e) => Concert.fromJson(e))
-              .where((c) => c.startDateTime.isAfter(now))
-              .toList();
+      final concerts = events
+          .map((e) => Concert.fromJson(e))
+          .where((c) => c.startDateTime.isAfter(now))
+          .toList();
 
       if (concerts.isEmpty) {
         return null;

@@ -260,7 +260,6 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
-  // Method to get address from latitude and longitude
   Future<String> _getAddressFromCoordinates(
       double latitude, double longitude) async {
     final placemarks = await placemarkFromCoordinates(latitude, longitude);

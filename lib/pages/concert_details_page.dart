@@ -80,7 +80,7 @@ class _ConcertDetailsPageState extends State<ConcertDetailsPage> {
                             ),
                         fit: BoxFit.cover,
                         colorFilter: ColorFilter.mode(
-                          Colors.black.withOpacity(0.5),
+                          Colors.black.withValues(alpha: 0.5),
                           BlendMode.darken,
                         ),
                       ),
@@ -154,7 +154,7 @@ class _ConcertDetailsPageState extends State<ConcertDetailsPage> {
                               (genre) => Chip(
                                 label: Text(genre),
                                 backgroundColor:
-                                    Colors.purpleAccent.withOpacity(0.2),
+                                    Colors.purpleAccent.withValues(alpha: 0.2),
                                 labelStyle: const TextStyle(
                                   color: Colors.purpleAccent,
                                 ),
@@ -187,7 +187,7 @@ class _ConcertDetailsPageState extends State<ConcertDetailsPage> {
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: Colors.red.withOpacity(0.2),
+                        color: Colors.red.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: const Row(

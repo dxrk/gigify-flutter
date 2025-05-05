@@ -8,7 +8,7 @@ class FavoritesService {
   static const String _favoriteConcertsKey = 'favorite_concerts';
 
   FavoritesService._({required CacheService cacheService})
-    : _cacheService = cacheService;
+      : _cacheService = cacheService;
 
   static FavoritesService? _instance;
 

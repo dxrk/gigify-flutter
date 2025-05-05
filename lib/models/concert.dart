@@ -79,53 +79,47 @@ class Concert {
   }
 
   factory Concert.fromJson(Map<String, dynamic> json) {
-    final startDate =
-        json.containsKey('dates') &&
-                json['dates'].containsKey('start') &&
-                json['dates']['start'].containsKey('dateTime')
-            ? DateTime.parse(json['dates']['start']['dateTime'] as String)
-            : json.containsKey('startDateTime')
+    final startDate = json.containsKey('dates') &&
+            json['dates'].containsKey('start') &&
+            json['dates']['start'].containsKey('dateTime')
+        ? DateTime.parse(json['dates']['start']['dateTime'] as String)
+        : json.containsKey('startDateTime')
             ? DateTime.parse(json['startDateTime'] as String)
             : DateTime.now();
 
-    final endDate =
-        json.containsKey('dates') &&
-                json['dates'].containsKey('end') &&
-                json['dates']['end'].containsKey('dateTime')
-            ? DateTime.parse(json['dates']['end']['dateTime'] as String)
-            : null;
+    final endDate = json.containsKey('dates') &&
+            json['dates'].containsKey('end') &&
+            json['dates']['end'].containsKey('dateTime')
+        ? DateTime.parse(json['dates']['end']['dateTime'] as String)
+        : null;
 
     double? minPrice;
     double? maxPrice;
     if (json.containsKey('priceRanges') &&
         (json['priceRanges'] as List<dynamic>).isNotEmpty) {
       final priceRange = json['priceRanges'][0] as Map<String, dynamic>;
-      minPrice =
-          priceRange.containsKey('min')
-              ? (priceRange['min'] as num).toDouble()
-              : null;
-      maxPrice =
-          priceRange.containsKey('max')
-              ? (priceRange['max'] as num).toDouble()
-              : null;
+      minPrice = priceRange.containsKey('min')
+          ? (priceRange['min'] as num).toDouble()
+          : null;
+      maxPrice = priceRange.containsKey('max')
+          ? (priceRange['max'] as num).toDouble()
+          : null;
     }
 
-    final venue =
-        json.containsKey('_embedded') &&
-                json['_embedded'].containsKey('venues') &&
-                (json['_embedded']['venues'] as List<dynamic>).isNotEmpty
-            ? (json['_embedded']['venues'][0] as Map<String, dynamic>)['name']
-                .toString()
-            : json.containsKey('venue')
+    final venue = json.containsKey('_embedded') &&
+            json['_embedded'].containsKey('venues') &&
+            (json['_embedded']['venues'] as List<dynamic>).isNotEmpty
+        ? (json['_embedded']['venues'][0] as Map<String, dynamic>)['name']
+            .toString()
+        : json.containsKey('venue')
             ? json['venue'].toString()
             : 'Unknown Venue';
 
-    final artistData =
-        json.containsKey('_embedded') &&
-                json['_embedded'].containsKey('attractions') &&
-                (json['_embedded']['attractions'] as List<dynamic>).isNotEmpty
-            ? json['_embedded']['attractions'][0] as Map<String, dynamic>
-            : {'id': 'unknown', 'name': json['name'] ?? 'Unknown Artist'};
+    final artistData = json.containsKey('_embedded') &&
+            json['_embedded'].containsKey('attractions') &&
+            (json['_embedded']['attractions'] as List<dynamic>).isNotEmpty
+        ? json['_embedded']['attractions'][0] as Map<String, dynamic>
+        : {'id': 'unknown', 'name': json['name'] ?? 'Unknown Artist'};
 
     Artist artist;
     if (json.containsKey('artist') && json['artist'] is Map<String, dynamic>) {
@@ -152,11 +146,10 @@ class Concert {
         name: artistData['name']?.toString() ?? 'Unknown Artist',
         popularity: 0,
         genres: genres,
-        imageUrl:
-            artistData.containsKey('images') &&
-                    (artistData['images'] as List<dynamic>).isNotEmpty
-                ? (artistData['images'] as List<dynamic>)[0]['url'] as String
-                : null,
+        imageUrl: artistData.containsKey('images') &&
+                (artistData['images'] as List<dynamic>).isNotEmpty
+            ? (artistData['images'] as List<dynamic>)[0]['url'] as String
+            : null,
       );
     }
 

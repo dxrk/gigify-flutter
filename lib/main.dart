@@ -1,5 +1,3 @@
-// TODO: Do we want better placeholder images?
-
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:nextbigthing/pages/discover_page.dart';

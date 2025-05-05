@@ -297,7 +297,7 @@ class _HomePageState extends State<HomePage>
                               ),
                               fit: BoxFit.cover,
                               colorFilter: ColorFilter.mode(
-                                Colors.black.withOpacity(0.5),
+                                Colors.black.withValues(alpha: 0.5),
                                 BlendMode.darken,
                               ),
                             ),
@@ -315,7 +315,7 @@ class _HomePageState extends State<HomePage>
                                         ),
                                     fit: BoxFit.cover,
                                     colorFilter: ColorFilter.mode(
-                                      Colors.black.withOpacity(0.5),
+                                      Colors.black.withValues(alpha: 0.5),
                                       BlendMode.darken,
                                     ),
                                   ),
@@ -334,7 +334,7 @@ class _HomePageState extends State<HomePage>
                                         ),
                                         decoration: BoxDecoration(
                                           color: Colors.purpleAccent
-                                              .withOpacity(0.3),
+                                              .withValues(alpha: 0.3),
                                           borderRadius: BorderRadius.circular(
                                             20,
                                           ),
@@ -371,8 +371,8 @@ class _HomePageState extends State<HomePage>
                                           Text(
                                             _featuredConcert.venue,
                                             style: TextStyle(
-                                              color: Colors.white.withOpacity(
-                                                0.9,
+                                              color: Colors.white.withValues(
+                                                alpha: 0.9,
                                               ),
                                               fontSize: 16,
                                             ),
@@ -388,8 +388,8 @@ class _HomePageState extends State<HomePage>
                                             _featuredConcert
                                                 .getFormattedStartTimeTruncated(),
                                             style: TextStyle(
-                                              color: Colors.white.withOpacity(
-                                                0.9,
+                                              color: Colors.white.withValues(
+                                                alpha: 0.9,
                                               ),
                                               fontSize: 16,
                                             ),
@@ -528,9 +528,7 @@ class _HomePageState extends State<HomePage>
                                       ConcertDetailsPage.route(concertObject),
                                     );
                                     if (result == true) {
-                                      setState(() {
-                                        // Refresh the state to update the favorite status
-                                      });
+                                      setState(() {});
                                     }
                                   },
                                   child: Column(
@@ -572,7 +570,8 @@ class _HomePageState extends State<HomePage>
                                                     height: 24,
                                                     decoration: BoxDecoration(
                                                       color: Colors.black
-                                                          .withOpacity(0.5),
+                                                          .withValues(
+                                                              alpha: 0.5),
                                                       shape: BoxShape.circle,
                                                     ),
                                                     child: IconButton(
@@ -660,7 +659,6 @@ class _HomePageState extends State<HomePage>
           ),
         );
         if (result == true) {
-          // Reload the data when returning from concert details
           _loadHomeData();
         }
       },
@@ -706,7 +704,7 @@ class _HomePageState extends State<HomePage>
                         width: 24,
                         height: 24,
                         decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.5),
+                          color: Colors.black.withValues(alpha: 0.5),
                           shape: BoxShape.circle,
                         ),
                         child: IconButton(

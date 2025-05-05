@@ -39,116 +39,114 @@ class _FavoritedConcertsPageState extends State<FavoritedConcertsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Favorited Concerts')),
-      body:
-          _isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : _favoritedConcerts.isEmpty
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _favoritedConcerts.isEmpty
               ? Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.favorite_border,
-                      size: 64,
-                      color: Colors.grey[400],
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'No favorited concerts yet',
-                      style: TextStyle(fontSize: 16, color: Colors.grey[400]),
-                    ),
-                  ],
-                ),
-              )
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.favorite_border,
+                        size: 64,
+                        color: Colors.grey[400],
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'No favorited concerts yet',
+                        style: TextStyle(fontSize: 16, color: Colors.grey[400]),
+                      ),
+                    ],
+                  ),
+                )
               : ListView.builder(
-                padding: const EdgeInsets.all(16),
-                itemCount: _favoritedConcerts.length,
-                itemBuilder: (context, index) {
-                  final concert = _favoritedConcerts[index];
-                  return GestureDetector(
-                    onTap:
-                        () => Navigator.push(
-                          context,
-                          ConcertDetailsPage.route(concert),
-                        ).then((_) => _loadFavoritedConcerts()),
-                    child: Card(
-                      margin: const EdgeInsets.only(bottom: 16),
-                      child: Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: Row(
-                          children: [
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(8),
-                              child: Image.network(
-                                concert.imageUrl ??
-                                    'https://placehold.co/100x100.png',
-                                width: 80,
-                                height: 80,
-                                fit: BoxFit.cover,
+                  padding: const EdgeInsets.all(16),
+                  itemCount: _favoritedConcerts.length,
+                  itemBuilder: (context, index) {
+                    final concert = _favoritedConcerts[index];
+                    return GestureDetector(
+                      onTap: () => Navigator.push(
+                        context,
+                        ConcertDetailsPage.route(concert),
+                      ).then((_) => _loadFavoritedConcerts()),
+                      child: Card(
+                        margin: const EdgeInsets.only(bottom: 16),
+                        child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Row(
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Image.network(
+                                  concert.imageUrl ??
+                                      'https://placehold.co/100x100.png',
+                                  width: 80,
+                                  height: 80,
+                                  fit: BoxFit.cover,
+                                ),
                               ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    concert.name,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16,
-                                    ),
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    concert.artist.name,
-                                    style: TextStyle(
-                                      color: Colors.grey[600],
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Row(
-                                    children: [
-                                      Icon(
-                                        Icons.calendar_today,
-                                        size: 14,
-                                        color: Colors.grey[400],
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      concert.name,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
                                       ),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        concert.getFormattedStartTime(),
-                                        style: TextStyle(
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      concert.artist.name,
+                                      style: TextStyle(
+                                        color: Colors.grey[600],
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Row(
+                                      children: [
+                                        Icon(
+                                          Icons.calendar_today,
+                                          size: 14,
                                           color: Colors.grey[400],
-                                          fontSize: 14,
                                         ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          concert.getFormattedStartTime(),
+                                          style: TextStyle(
+                                            color: Colors.grey[400],
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
-                            IconButton(
-                              icon: const Icon(
-                                Icons.favorite,
-                                color: Colors.red,
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.favorite,
+                                  color: Colors.red,
+                                ),
+                                onPressed: () async {
+                                  final service =
+                                      await FavoritesService.initialize();
+                                  await service.toggleFavoriteConcert(concert);
+                                  _loadFavoritedConcerts();
+                                },
                               ),
-                              onPressed: () async {
-                                final service =
-                                    await FavoritesService.initialize();
-                                await service.toggleFavoriteConcert(concert);
-                                _loadFavoritedConcerts();
-                              },
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                  );
-                },
-              ),
+                    );
+                  },
+                ),
     );
   }
 }
