@@ -1,7 +1,4 @@
-// TODO: Figure out why the local time for the concert is off
-// TODO: App splash screen
 // TODO: Do we want better placeholder images?
-// TODO: The current "custom location" placeholder text has lat/long. We should probably change that
 
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -154,14 +151,12 @@ class _MainTabControllerState extends State<MainTabController> {
             BottomNavigationBarItem(
               icon: CircleAvatar(
                 radius: 12,
-                backgroundImage:
-                    _profileImageUrl != null
-                        ? NetworkImage(_profileImageUrl!)
-                        : null,
-                child:
-                    _profileImageUrl == null
-                        ? const Icon(Icons.person, size: 16)
-                        : null,
+                backgroundImage: _profileImageUrl != null
+                    ? NetworkImage(_profileImageUrl!)
+                    : null,
+                child: _profileImageUrl == null
+                    ? const Icon(Icons.person, size: 16)
+                    : null,
               ),
               label: 'Profile',
             ),

@@ -40,6 +40,12 @@ class _ConcertDetailsPageState extends State<ConcertDetailsPage> {
           SliverAppBar(
             expandedHeight: 300,
             pinned: true,
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back),
+              onPressed: () {
+                Navigator.pop(context, true);
+              },
+            ),
             actions: [
               FutureBuilder<bool>(
                 future: FavoritesService.initialize().then(
@@ -68,8 +74,7 @@ class _ConcertDetailsPageState extends State<ConcertDetailsPage> {
                   return Container(
                     decoration: BoxDecoration(
                       image: DecorationImage(
-                        image:
-                            snapshot.data ??
+                        image: snapshot.data ??
                             const NetworkImage(
                               'https://placehold.co/400x200.png',
                             ),
@@ -133,8 +138,8 @@ class _ConcertDetailsPageState extends State<ConcertDetailsPage> {
                                 widget.concert.maxPrice != null
                             ? '\$${widget.concert.minPrice!.toStringAsFixed(2)} - \$${widget.concert.maxPrice!.toStringAsFixed(2)}'
                             : widget.concert.minPrice != null
-                            ? 'From \$${widget.concert.minPrice!.toStringAsFixed(2)}'
-                            : 'Up to \$${widget.concert.maxPrice!.toStringAsFixed(2)}',
+                                ? 'From \$${widget.concert.minPrice!.toStringAsFixed(2)}'
+                                : 'Up to \$${widget.concert.maxPrice!.toStringAsFixed(2)}',
                       ),
                     ]),
                   if (widget.concert.minPrice != null ||
@@ -144,19 +149,18 @@ class _ConcertDetailsPageState extends State<ConcertDetailsPage> {
                     _buildInfoSection('Genres', [
                       Wrap(
                         spacing: 8,
-                        children:
-                            widget.concert.genres
-                                .map(
-                                  (genre) => Chip(
-                                    label: Text(genre),
-                                    backgroundColor: Colors.purpleAccent
-                                        .withOpacity(0.2),
-                                    labelStyle: const TextStyle(
-                                      color: Colors.purpleAccent,
-                                    ),
-                                  ),
-                                )
-                                .toList(),
+                        children: widget.concert.genres
+                            .map(
+                              (genre) => Chip(
+                                label: Text(genre),
+                                backgroundColor:
+                                    Colors.purpleAccent.withOpacity(0.2),
+                                labelStyle: const TextStyle(
+                                  color: Colors.purpleAccent,
+                                ),
+                              ),
+                            )
+                            .toList(),
                       ),
                     ]),
                   if (widget.concert.genres.isNotEmpty)

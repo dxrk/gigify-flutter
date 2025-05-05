@@ -83,7 +83,10 @@ class _ProfilePageState extends State<ProfilePage> {
     }
 
     if (_selectedLocation == 'Custom Location') {
-      _locationController.text = _customLocation['details'] ?? '';
+      _locationController.text = await _getAddressFromCoordinates(
+        _latitude!,
+        _longitude!,
+      );
     }
   }
 
@@ -245,10 +248,9 @@ class _ProfilePageState extends State<ProfilePage> {
       setState(() {
         _name = profile['display_name'] ?? 'Unknown User';
         _email = profile['email'] ?? 'No email available';
-        _avatarUrl =
-            profile['images']?.isNotEmpty == true
-                ? profile['images'][0]['url']
-                : 'https://placehold.co/100x100.png';
+        _avatarUrl = profile['images']?.isNotEmpty == true
+            ? profile['images'][0]['url']
+            : 'https://placehold.co/100x100.png';
         _concertCount = stats['favoriteConcerts'] ?? 0;
         _artistCount = stats['favoriteArtists'] ?? 0;
         _isLoading = false;
@@ -256,6 +258,17 @@ class _ProfilePageState extends State<ProfilePage> {
     } catch (e) {
       setState(() => _isLoading = false);
     }
+  }
+
+  // Method to get address from latitude and longitude
+  Future<String> _getAddressFromCoordinates(
+      double latitude, double longitude) async {
+    final placemarks = await placemarkFromCoordinates(latitude, longitude);
+    if (placemarks.isNotEmpty) {
+      final place = placemarks.first;
+      return '${place.locality}, ${place.administrativeArea}';
+    }
+    return 'Unknown Location';
   }
 
   @override
@@ -274,158 +287,151 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
           ],
         ),
-        body:
-            _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : SingleChildScrollView(
-                  child: Column(
-                    children: [
-                      if (_showSettings) _buildSettingsPanel(),
-                      const SizedBox(height: 20),
-                      CircleAvatar(
-                        radius: 50,
-                        backgroundImage: NetworkImage(_avatarUrl),
+        body: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : SingleChildScrollView(
+                child: Column(
+                  children: [
+                    if (_showSettings) _buildSettingsPanel(),
+                    const SizedBox(height: 20),
+                    CircleAvatar(
+                      radius: 50,
+                      backgroundImage: NetworkImage(_avatarUrl),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      _name,
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
                       ),
-                      const SizedBox(height: 16),
-                      Text(
-                        _name,
-                        style: const TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
+                    ),
+                    Text(
+                      _email,
+                      style: TextStyle(fontSize: 16, color: Colors.grey[400]),
+                    ),
+                    const SizedBox(height: 32),
+                    Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 20),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF272727),
+                        borderRadius: BorderRadius.circular(16),
                       ),
-                      Text(
-                        _email,
-                        style: TextStyle(fontSize: 16, color: Colors.grey[400]),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          _buildStatColumn(
+                            _concertCount.toString(),
+                            'Concerts',
+                          ),
+                          Container(
+                            height: 40,
+                            width: 1,
+                            color: Colors.grey[700],
+                          ),
+                          _buildStatColumn(
+                            _artistCount.toString(),
+                            'Artists',
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 32),
-                      Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 20),
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF272727),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            _buildStatColumn(
-                              _concertCount.toString(),
-                              'Concerts',
+                    ),
+                    const SizedBox(height: 32),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Column(
+                        children: [
+                          _buildProfileSection(
+                            context,
+                            Icons.history,
+                            'Favorited Concerts',
+                            'Browse your favorited concerts',
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    const FavoritedConcertsPage(),
+                              ),
                             ),
-                            Container(
-                              height: 40,
-                              width: 1,
-                              color: Colors.grey[700],
+                          ),
+                          _buildProfileSection(
+                            context,
+                            Icons.onetwothree,
+                            'Top Artists',
+                            'View your top Spotify artists',
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => TopArtist(
+                                  accessToken: _accessToken,
+                                ),
+                              ),
                             ),
-                            _buildStatColumn(
-                              _artistCount.toString(),
-                              'Artists',
+                          ),
+                          _buildProfileSection(
+                            context,
+                            Icons.favorite_border,
+                            'Followed Artists',
+                            'Check your followed artists',
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => FollowedArtist(),
+                              ),
                             ),
-                          ],
-                        ),
+                          ),
+                          _buildProfileSection(
+                            context,
+                            Icons.help_outline,
+                            'Help & Support',
+                            'Contact us or read FAQs',
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => FAQPage(),
+                              ),
+                            ),
+                          ),
+                          _buildProfileSection(
+                            context,
+                            Icons.refresh,
+                            'Reset Recommendations',
+                            'Reset your recommendations',
+                            isDestructive: true,
+                            onTap: () async {
+                              final cacheService =
+                                  await CacheService.initialize();
+                              await cacheService.clearRecommendations();
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Recommendations reset'),
+                                  duration: Duration(seconds: 2),
+                                ),
+                              );
+                            },
+                          ),
+                          _buildProfileSection(
+                            context,
+                            Icons.logout,
+                            'Log Out',
+                            'Sign out from your account',
+                            isDestructive: true,
+                            onTap: () async {
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const WelcomeScreen(),
+                                ),
+                              );
+                            },
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 32),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: Column(
-                          children: [
-                            _buildProfileSection(
-                              context,
-                              Icons.history,
-                              'Favorited Concerts',
-                              'Browse your favorited concerts',
-                              onTap:
-                                  () => Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder:
-                                          (context) =>
-                                              const FavoritedConcertsPage(),
-                                    ),
-                                  ),
-                            ),
-                            _buildProfileSection(
-                              context,
-                              Icons.onetwothree,
-                              'Top Artists',
-                              'View your top Spotify artists',
-                              onTap:
-                                  () => Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder:
-                                          (context) => TopArtist(
-                                            accessToken: _accessToken,
-                                          ),
-                                    ),
-                                  ),
-                            ),
-                            _buildProfileSection(
-                              context,
-                              Icons.favorite_border,
-                              'Followed Artists',
-                              'Check your followed artists',
-                              onTap:
-                                  () => Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => FollowedArtist(),
-                                    ),
-                                  ),
-                            ),
-                            _buildProfileSection(
-                              context,
-                              Icons.help_outline,
-                              'Help & Support',
-                              'Contact us or read FAQs',
-                              onTap:
-                                  () => Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => FAQPage(),
-                                    ),
-                                  ),
-                            ),
-                            _buildProfileSection(
-                              context,
-                              Icons.refresh,
-                              'Reset Recommendations',
-                              'Reset your recommendations',
-                              isDestructive: true,
-                              onTap: () async {
-                                final cacheService =
-                                    await CacheService.initialize();
-                                await cacheService.clearRecommendations();
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Recommendations reset'),
-                                    duration: Duration(seconds: 2),
-                                  ),
-                                );
-                              },
-                            ),
-                            _buildProfileSection(
-                              context,
-                              Icons.logout,
-                              'Log Out',
-                              'Sign out from your account',
-                              isDestructive: true,
-                              onTap: () async {
-                                Navigator.pushReplacement(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => const WelcomeScreen(),
-                                  ),
-                                );
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
+              ),
       ),
     );
   }
@@ -537,22 +543,21 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
               if (_selectedLocation == 'Current Location')
                 IconButton(
-                  icon:
-                      _isGettingLocation
-                          ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                Colors.purpleAccent,
-                              ),
+                  icon: _isGettingLocation
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.purpleAccent,
                             ),
-                          )
-                          : const Icon(
-                            Icons.refresh,
-                            color: Colors.purpleAccent,
                           ),
+                        )
+                      : const Icon(
+                          Icons.refresh,
+                          color: Colors.purpleAccent,
+                        ),
                   onPressed: _isGettingLocation ? null : _getCurrentLocation,
                 ),
             ],
@@ -575,31 +580,29 @@ class _ProfilePageState extends State<ProfilePage> {
                         borderRadius: BorderRadius.circular(8),
                         borderSide: BorderSide.none,
                       ),
-                      suffixIcon:
-                          _isVerifyingLocation
-                              ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: Padding(
-                                  padding: EdgeInsets.all(8.0),
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(
-                                      Colors.purpleAccent,
-                                    ),
+                      suffixIcon: _isVerifyingLocation
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: Padding(
+                                padding: EdgeInsets.all(8.0),
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    Colors.purpleAccent,
                                   ),
                                 ),
-                              )
-                              : IconButton(
-                                icon: const Icon(
-                                  Icons.check_circle_outline,
-                                  color: Colors.purpleAccent,
-                                ),
-                                onPressed:
-                                    () => _verifyCustomLocation(
-                                      _locationController.text,
-                                    ),
                               ),
+                            )
+                          : IconButton(
+                              icon: const Icon(
+                                Icons.check_circle_outline,
+                                color: Colors.purpleAccent,
+                              ),
+                              onPressed: () => _verifyCustomLocation(
+                                _locationController.text,
+                              ),
+                            ),
                     ),
                     onChanged: (value) {
                       if (value.isEmpty) {
@@ -638,12 +641,37 @@ class _ProfilePageState extends State<ProfilePage> {
                   if (_latitude != null && _longitude != null)
                     Padding(
                       padding: const EdgeInsets.only(top: 4),
-                      child: Text(
-                        'Location verified!',
-                        style: TextStyle(
-                          color: Colors.green[400],
-                          fontSize: 12,
-                        ),
+                      child: FutureBuilder<String>(
+                        future:
+                            _getAddressFromCoordinates(_latitude!, _longitude!),
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return Text(
+                              'Verifying location...',
+                              style: TextStyle(
+                                color: Colors.green[400],
+                                fontSize: 12,
+                              ),
+                            );
+                          } else if (snapshot.hasError) {
+                            return Text(
+                              'Error verifying location',
+                              style: TextStyle(
+                                color: Colors.redAccent,
+                                fontSize: 12,
+                              ),
+                            );
+                          } else {
+                            return Text(
+                              'Location verified: ${snapshot.data}',
+                              style: TextStyle(
+                                color: Colors.green[400],
+                                fontSize: 12,
+                              ),
+                            );
+                          }
+                        },
                       ),
                     ),
                 ],
@@ -734,14 +762,13 @@ class _ProfilePageState extends State<ProfilePage> {
           subtitle,
           style: TextStyle(color: Colors.grey[400], fontSize: 12),
         ),
-        trailing:
-            isDestructive
-                ? null
-                : const Icon(
-                  Icons.arrow_forward_ios,
-                  size: 16,
-                  color: Colors.grey,
-                ),
+        trailing: isDestructive
+            ? null
+            : const Icon(
+                Icons.arrow_forward_ios,
+                size: 16,
+                color: Colors.grey,
+              ),
         onTap: onTap,
       ),
     );

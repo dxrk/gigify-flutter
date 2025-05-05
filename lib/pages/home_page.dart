@@ -179,48 +179,45 @@ class _HomePageState extends State<HomePage>
 
       setState(() {
         _username = profile['display_name'] ?? 'Unknown User';
-        _featuredConcert =
-            featuredConcert ??
+        _featuredConcert = featuredConcert ??
             (recommended.isNotEmpty
                 ? recommended[0]
                 : Concert(
-                  id: 'unknown',
-                  artist: Artist(
                     id: 'unknown',
-                    name: 'Unknown Artist',
-                    popularity: 0,
-                    genres: [],
-                  ),
-                  name: 'No Upcoming Concerts',
-                  startDateTime: DateTime.now(),
-                  venue: 'Check back later',
-                  imageUrl: 'https://placehold.co/400x200.png',
-                ));
-        _forYou =
-            recommended
-                .take(5)
-                .map(
-                  (concert) => {
-                    'artist': concert.artist.name,
-                    'date': concert.startDateTime.toIso8601String(),
-                    'venue': concert.venue,
-                    'imageUrl':
-                        concert.imageUrl ?? 'https://placehold.co/170x170.png',
-                  },
-                )
-                .toList();
-        _trending =
-            discovery
-                .take(5)
-                .map(
-                  (concert) => {
-                    'artist': concert.artist.name,
-                    'date': concert.startDateTime.toIso8601String(),
-                    'imageUrl':
-                        concert.imageUrl ?? 'https://placehold.co/200x200.png',
-                  },
-                )
-                .toList();
+                    artist: Artist(
+                      id: 'unknown',
+                      name: 'Unknown Artist',
+                      popularity: 0,
+                      genres: [],
+                    ),
+                    name: 'No Upcoming Concerts',
+                    startDateTime: DateTime.now(),
+                    venue: 'Check back later',
+                    imageUrl: 'https://placehold.co/400x200.png',
+                  ));
+        _forYou = recommended
+            .take(5)
+            .map(
+              (concert) => {
+                'artist': concert.artist.name,
+                'date': concert.startDateTime.toIso8601String(),
+                'venue': concert.venue,
+                'imageUrl':
+                    concert.imageUrl ?? 'https://placehold.co/170x170.png',
+              },
+            )
+            .toList();
+        _trending = discovery
+            .take(5)
+            .map(
+              (concert) => {
+                'artist': concert.artist.name,
+                'date': concert.startDateTime.toIso8601String(),
+                'imageUrl':
+                    concert.imageUrl ?? 'https://placehold.co/200x200.png',
+              },
+            )
+            .toList();
         _allConcerts = [...recommended, ...discovery];
         _isLoading = false;
       });
@@ -241,207 +238,202 @@ class _HomePageState extends State<HomePage>
             style: TextStyle(fontWeight: FontWeight.bold),
           ),
         ),
-        body:
-            _isLoading
-                ? Center(
+        body: _isLoading
+            ? Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const CircularProgressIndicator(),
+                    const SizedBox(height: 24),
+                    FadeTransition(
+                      opacity: _fadeAnimation,
+                      child: Text(
+                        _loadingMessages[_currentMessageIndex],
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            : SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
                   child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const CircularProgressIndicator(),
-                      const SizedBox(height: 24),
-                      FadeTransition(
-                        opacity: _fadeAnimation,
-                        child: Text(
-                          _loadingMessages[_currentMessageIndex],
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w500,
-                          ),
-                          textAlign: TextAlign.center,
+                      Text(
+                        'Welcome ${_username.split(" ").first}',
+                        style: const TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
-                    ],
-                  ),
-                )
-                : SingleChildScrollView(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Welcome ${_username.split(" ").first}',
-                          style: const TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                          ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Check out these upcoming concerts',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.grey[400],
                         ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Check out these upcoming concerts',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.grey[400],
-                          ),
+                      ),
+                      const SizedBox(height: 24),
+                      GestureDetector(
+                        onTap: () => Navigator.push(
+                          context,
+                          ConcertDetailsPage.route(_featuredConcert),
                         ),
-                        const SizedBox(height: 24),
-                        GestureDetector(
-                          onTap:
-                              () => Navigator.push(
-                                context,
-                                ConcertDetailsPage.route(_featuredConcert),
+                        child: Container(
+                          height: 200,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(16),
+                            image: DecorationImage(
+                              image: NetworkImage(
+                                _featuredConcert.imageUrl ??
+                                    'https://placehold.co/400x200.png',
                               ),
-                          child: Container(
-                            height: 200,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(16),
-                              image: DecorationImage(
-                                image: NetworkImage(
-                                  _featuredConcert.imageUrl ??
-                                      'https://placehold.co/400x200.png',
-                                ),
-                                fit: BoxFit.cover,
-                                colorFilter: ColorFilter.mode(
-                                  Colors.black.withOpacity(0.5),
-                                  BlendMode.darken,
-                                ),
+                              fit: BoxFit.cover,
+                              colorFilter: ColorFilter.mode(
+                                Colors.black.withOpacity(0.5),
+                                BlendMode.darken,
                               ),
                             ),
-                            child: FutureBuilder<ImageProvider>(
-                              future: _featuredConcert.getImageProvider(),
-                              builder: (context, snapshot) {
-                                return Container(
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(16),
-                                    image: DecorationImage(
-                                      image:
-                                          snapshot.data ??
-                                          const NetworkImage(
-                                            'https://placehold.co/400x200.png',
+                          ),
+                          child: FutureBuilder<ImageProvider>(
+                            future: _featuredConcert.getImageProvider(),
+                            builder: (context, snapshot) {
+                              return Container(
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(16),
+                                  image: DecorationImage(
+                                    image: snapshot.data ??
+                                        const NetworkImage(
+                                          'https://placehold.co/400x200.png',
+                                        ),
+                                    fit: BoxFit.cover,
+                                    colorFilter: ColorFilter.mode(
+                                      Colors.black.withOpacity(0.5),
+                                      BlendMode.darken,
+                                    ),
+                                  ),
+                                ),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(20.0),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    mainAxisAlignment: MainAxisAlignment.end,
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 12,
+                                          vertical: 6,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.purpleAccent
+                                              .withOpacity(0.3),
+                                          borderRadius: BorderRadius.circular(
+                                            20,
                                           ),
-                                      fit: BoxFit.cover,
-                                      colorFilter: ColorFilter.mode(
-                                        Colors.black.withOpacity(0.5),
-                                        BlendMode.darken,
+                                        ),
+                                        child: const Text(
+                                          'Featured',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
                                       ),
-                                    ),
-                                  ),
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(20.0),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      mainAxisAlignment: MainAxisAlignment.end,
-                                      children: [
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 12,
-                                            vertical: 6,
+                                      const SizedBox(height: 12),
+                                      Flexible(
+                                        child: Text(
+                                          _featuredConcert.name,
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 26,
+                                            fontWeight: FontWeight.bold,
                                           ),
-                                          decoration: BoxDecoration(
-                                            color: Colors.purpleAccent
-                                                .withOpacity(0.3),
-                                            borderRadius: BorderRadius.circular(
-                                              20,
-                                            ),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Row(
+                                        children: [
+                                          const Icon(
+                                            Icons.location_on,
+                                            color: Colors.white70,
+                                            size: 16,
                                           ),
-                                          child: const Text(
-                                            'Featured',
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            _featuredConcert.venue,
                                             style: TextStyle(
-                                              color: Colors.white,
-                                              fontWeight: FontWeight.bold,
+                                              color: Colors.white.withOpacity(
+                                                0.9,
+                                              ),
+                                              fontSize: 16,
                                             ),
                                           ),
-                                        ),
-                                        const SizedBox(height: 12),
-                                        Flexible(
-                                          child: Text(
-                                            _featuredConcert.name,
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 26,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                            overflow: TextOverflow.ellipsis,
+                                          const SizedBox(width: 16),
+                                          const Icon(
+                                            Icons.calendar_today,
+                                            color: Colors.white70,
+                                            size: 16,
                                           ),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Row(
-                                          children: [
-                                            const Icon(
-                                              Icons.location_on,
-                                              color: Colors.white70,
-                                              size: 16,
-                                            ),
-                                            const SizedBox(width: 4),
-                                            Text(
-                                              _featuredConcert.venue,
-                                              style: TextStyle(
-                                                color: Colors.white.withOpacity(
-                                                  0.9,
-                                                ),
-                                                fontSize: 16,
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            _featuredConcert
+                                                .getFormattedStartTimeTruncated(),
+                                            style: TextStyle(
+                                              color: Colors.white.withOpacity(
+                                                0.9,
                                               ),
+                                              fontSize: 16,
                                             ),
-                                            const SizedBox(width: 16),
-                                            const Icon(
-                                              Icons.calendar_today,
-                                              color: Colors.white70,
-                                              size: 16,
-                                            ),
-                                            const SizedBox(width: 4),
-                                            Text(
-                                              _featuredConcert
-                                                  .getFormattedStartTimeTruncated(),
-                                              style: TextStyle(
-                                                color: Colors.white.withOpacity(
-                                                  0.9,
-                                                ),
-                                                fontSize: 16,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
                                   ),
-                                );
-                              },
-                            ),
+                                ),
+                              );
+                            },
                           ),
                         ),
-                        const SizedBox(height: 28),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text(
-                              'For You',
-                              style: TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
+                      ),
+                      const SizedBox(height: 28),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'For You',
+                            style: TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => AllRecommendationsPage(
+                                  concerts: _allConcerts,
+                                ),
                               ),
                             ),
-                            TextButton(
-                              onPressed:
-                                  () => Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder:
-                                          (context) => AllRecommendationsPage(
-                                            concerts: _allConcerts,
-                                          ),
-                                    ),
-                                  ),
-                              child: const Text(
-                                'See All',
-                                style: TextStyle(color: Colors.purpleAccent),
-                              ),
+                            child: const Text(
+                              'See All',
+                              style: TextStyle(color: Colors.purpleAccent),
                             ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        _forYou.isEmpty
-                            ? Center(
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      _forYou.isEmpty
+                          ? Center(
                               child: Padding(
                                 padding: const EdgeInsets.symmetric(
                                   vertical: 20,
@@ -455,7 +447,7 @@ class _HomePageState extends State<HomePage>
                                 ),
                               ),
                             )
-                            : SizedBox(
+                          : SizedBox(
                               height: 230,
                               child: ListView.builder(
                                 scrollDirection: Axis.horizontal,
@@ -466,39 +458,37 @@ class _HomePageState extends State<HomePage>
                                 },
                               ),
                             ),
-                        const SizedBox(height: 28),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text(
-                              'Trending Now',
-                              style: TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
-                              ),
+                      const SizedBox(height: 28),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Trending Now',
+                            style: TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
                             ),
-                            if (_trending.isNotEmpty)
-                              TextButton(
-                                onPressed:
-                                    () => Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder:
-                                            (context) => AllRecommendationsPage(
-                                              concerts: _allConcerts,
-                                            ),
-                                      ),
-                                    ),
-                                child: const Text(
-                                  'See All',
-                                  style: TextStyle(color: Colors.purpleAccent),
+                          ),
+                          if (_trending.isNotEmpty)
+                            TextButton(
+                              onPressed: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => AllRecommendationsPage(
+                                    concerts: _allConcerts,
+                                  ),
                                 ),
                               ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        _trending.isEmpty
-                            ? Center(
+                              child: const Text(
+                                'See All',
+                                style: TextStyle(color: Colors.purpleAccent),
+                              ),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      _trending.isEmpty
+                          ? Center(
                               child: Padding(
                                 padding: const EdgeInsets.symmetric(
                                   vertical: 20,
@@ -512,32 +502,37 @@ class _HomePageState extends State<HomePage>
                                 ),
                               ),
                             )
-                            : GridView.builder(
+                          : GridView.builder(
                               shrinkWrap: true,
                               physics: const NeverScrollableScrollPhysics(),
                               gridDelegate:
                                   const SliverGridDelegateWithFixedCrossAxisCount(
-                                    crossAxisCount: 2,
-                                    childAspectRatio: 1.0,
-                                    crossAxisSpacing: 16,
-                                    mainAxisSpacing: 16,
-                                  ),
+                                crossAxisCount: 2,
+                                childAspectRatio: 1.0,
+                                crossAxisSpacing: 16,
+                                mainAxisSpacing: 16,
+                              ),
                               itemCount: _trending.length,
                               itemBuilder: (context, index) {
                                 final trending = _trending[index];
                                 final concertObject = _allConcerts.firstWhere(
                                   (concert) =>
                                       concert.artist.name == trending['artist'],
-                                  orElse:
-                                      () =>
-                                          _allConcerts[index + _forYou.length],
+                                  orElse: () =>
+                                      _allConcerts[index + _forYou.length],
                                 );
                                 return GestureDetector(
-                                  onTap:
-                                      () => Navigator.push(
-                                        context,
-                                        ConcertDetailsPage.route(concertObject),
-                                      ),
+                                  onTap: () async {
+                                    final result = await Navigator.push(
+                                      context,
+                                      ConcertDetailsPage.route(concertObject),
+                                    );
+                                    if (result == true) {
+                                      setState(() {
+                                        // Refresh the state to update the favorite status
+                                      });
+                                    }
+                                  },
                                   child: Column(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
@@ -561,15 +556,14 @@ class _HomePageState extends State<HomePage>
                                               top: 8,
                                               right: 8,
                                               child: FutureBuilder<bool>(
-                                                future:
-                                                    FavoritesService.initialize()
-                                                        .then(
-                                                          (service) => service
-                                                              .isConcertFavorited(
-                                                                concertObject
-                                                                    .id,
-                                                              ),
-                                                        ),
+                                                future: FavoritesService
+                                                        .initialize()
+                                                    .then(
+                                                  (service) => service
+                                                      .isConcertFavorited(
+                                                    concertObject.id,
+                                                  ),
+                                                ),
                                                 builder: (context, snapshot) {
                                                   final isFavorited =
                                                       snapshot.data ?? false;
@@ -587,25 +581,25 @@ class _HomePageState extends State<HomePage>
                                                             ? Icons.favorite
                                                             : Icons
                                                                 .favorite_border,
-                                                        color:
-                                                            isFavorited
-                                                                ? Colors.red
-                                                                : Colors.white,
+                                                        color: isFavorited
+                                                            ? Colors.red
+                                                            : Colors.white,
                                                         size: 14,
                                                       ),
                                                       padding: EdgeInsets.zero,
                                                       constraints:
                                                           const BoxConstraints(
-                                                            minWidth: 24,
-                                                            minHeight: 24,
-                                                          ),
+                                                        minWidth: 24,
+                                                        minHeight: 24,
+                                                      ),
                                                       onPressed: () async {
                                                         final service =
-                                                            await FavoritesService.initialize();
+                                                            await FavoritesService
+                                                                .initialize();
                                                         await service
                                                             .toggleFavoriteConcert(
-                                                              concertObject,
-                                                            );
+                                                          concertObject,
+                                                        );
                                                         setState(() {});
                                                       },
                                                     ),
@@ -642,10 +636,10 @@ class _HomePageState extends State<HomePage>
                                 );
                               },
                             ),
-                      ],
-                    ),
+                    ],
                   ),
                 ),
+              ),
       ),
     );
   }
@@ -658,13 +652,17 @@ class _HomePageState extends State<HomePage>
     );
 
     return GestureDetector(
-      onTap: () {
-        Navigator.push(
+      onTap: () async {
+        final result = await Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => ConcertDetailsPage(concert: concertObject),
           ),
         );
+        if (result == true) {
+          // Reload the data when returning from concert details
+          _loadHomeData();
+        }
       },
       child: Container(
         width: 170,
@@ -684,8 +682,7 @@ class _HomePageState extends State<HomePage>
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(16),
                           image: DecorationImage(
-                            image:
-                                snapshot.data ??
+                            image: snapshot.data ??
                                 const NetworkImage(
                                   'https://placehold.co/170x170.png',
                                 ),
