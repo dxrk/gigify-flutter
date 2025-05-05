@@ -14,8 +14,11 @@ class SpotifyAPI {
     };
   }
 
-  static T _handleResponse<T>(http.Response response, String endpoint,
-      {T Function(Map<String, dynamic>)? fromJson}) {
+  static T _handleResponse<T>(
+    http.Response response,
+    String endpoint, {
+    T Function(Map<String, dynamic>)? fromJson,
+  }) {
     if (response.statusCode >= 200 && response.statusCode < 300) {
       final data = jsonDecode(response.body) as Map<String, dynamic>;
 
@@ -29,12 +32,14 @@ class SpotifyAPI {
 
       if (response.statusCode == 401) {
         throw ApiException(
-            'Spotify authentication failed. Token may have expired.');
+          'Spotify authentication failed. Token may have expired.',
+        );
       } else if (response.statusCode == 429) {
         final retryAfter =
             int.tryParse(response.headers['retry-after'] ?? '30') ?? 30;
         throw ApiException(
-            'Spotify rate limit exceeded. Try again in $retryAfter seconds.');
+          'Spotify rate limit exceeded. Try again in $retryAfter seconds.',
+        );
       } else {
         Map<String, dynamic> errorBody = {};
         try {
@@ -43,7 +48,8 @@ class SpotifyAPI {
 
         final errorMessage = errorBody['error']?['message'] ?? 'Unknown error';
         throw ApiException(
-            'Spotify API error (${response.statusCode}): $errorMessage');
+          'Spotify API error (${response.statusCode}): $errorMessage',
+        );
       }
     }
   }
@@ -51,10 +57,7 @@ class SpotifyAPI {
   static Future<Map<String, dynamic>> getUserProfile(String accessToken) async {
     try {
       final response = await http
-          .get(
-            Uri.parse('$_baseUrl/me'),
-            headers: _createHeaders(accessToken),
-          )
+          .get(Uri.parse('$_baseUrl/me'), headers: _createHeaders(accessToken))
           .timeout(Duration(seconds: _requestTimeout));
 
       return _handleResponse<Map<String, dynamic>>(response, '/me');
@@ -65,7 +68,8 @@ class SpotifyAPI {
   }
 
   static Future<Map<String, dynamic>> getUserPreferences(
-      String accessToken) async {
+    String accessToken,
+  ) async {
     try {
       final profile = await getUserProfile(accessToken);
 
@@ -100,7 +104,8 @@ class SpotifyAPI {
       final response = await http
           .get(
             Uri.parse(
-                '$_baseUrl/me/top/artists?limit=$limit&time_range=$timeRange'),
+              '$_baseUrl/me/top/artists?limit=$limit&time_range=$timeRange',
+            ),
             headers: _createHeaders(accessToken),
           )
           .timeout(Duration(seconds: _requestTimeout));
@@ -181,8 +186,9 @@ class SpotifyAPI {
             final trackId = item['track']['id'] as String;
             trackCounts[trackId] = (trackCounts[trackId] ?? 0) + 1;
 
-            final processedItem =
-                Map<String, dynamic>.from(item as Map<String, dynamic>);
+            final processedItem = Map<String, dynamic>.from(
+              item as Map<String, dynamic>,
+            );
             processedItem['play_count'] = trackCounts[trackId];
             processedItems.add(processedItem);
           }
@@ -258,7 +264,8 @@ class SpotifyAPI {
       final response = await http
           .get(
             Uri.parse(
-                '$_baseUrl/search?q=$encodedQuery&type=artist&limit=$limit'),
+              '$_baseUrl/search?q=$encodedQuery&type=artist&limit=$limit',
+            ),
             headers: _createHeaders(accessToken),
           )
           .timeout(Duration(seconds: _requestTimeout));
@@ -343,16 +350,15 @@ class SpotifyAPI {
     try {
       if (seedArtists.isEmpty && seedGenres.isEmpty && seedTracks.isEmpty) {
         throw ApiException(
-            'At least one seed (artist, genre, or track) is required');
+          'At least one seed (artist, genre, or track) is required',
+        );
       }
 
       if (seedArtists.length + seedGenres.length + seedTracks.length > 5) {
         throw ApiException('Maximum of 5 seeds allowed in total');
       }
 
-      final queryParams = <String, String>{
-        'limit': limit.toString(),
-      };
+      final queryParams = <String, String>{'limit': limit.toString()};
 
       if (seedArtists.isNotEmpty) {
         queryParams['seed_artists'] = seedArtists.join(',');
@@ -370,14 +376,14 @@ class SpotifyAPI {
         queryParams[key] = value.toString();
       });
 
-      final uri =
-          Uri.https('api.spotify.com', '/v1/recommendations', queryParams);
+      final uri = Uri.https(
+        'api.spotify.com',
+        '/v1/recommendations',
+        queryParams,
+      );
 
       final response = await http
-          .get(
-            uri,
-            headers: _createHeaders(accessToken),
-          )
+          .get(uri, headers: _createHeaders(accessToken))
           .timeout(Duration(seconds: _requestTimeout));
 
       return _handleResponse<List<Map<String, dynamic>>>(

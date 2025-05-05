@@ -8,7 +8,7 @@ class FavoritesService {
   static const String _favoriteConcertsKey = 'favorite_concerts';
 
   FavoritesService._({required CacheService cacheService})
-      : _cacheService = cacheService;
+    : _cacheService = cacheService;
 
   static FavoritesService? _instance;
 
@@ -29,8 +29,9 @@ class FavoritesService {
   }
 
   Future<List<Concert>> getFavoriteConcerts() async {
-    final concerts =
-        await _cacheService.get<List<dynamic>>(_favoriteConcertsKey);
+    final concerts = await _cacheService.get<List<dynamic>>(
+      _favoriteConcertsKey,
+    );
     if (concerts == null) return [];
     return concerts
         .map((c) => Concert.fromJson(c as Map<String, dynamic>))

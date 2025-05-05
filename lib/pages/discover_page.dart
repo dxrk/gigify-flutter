@@ -163,13 +163,14 @@ class _DiscoverPageState extends State<DiscoverPage> {
         case 'This Weekend':
           final now = DateTime.now();
           final endOfWeekend = now.add(const Duration(days: 7));
-          _concerts = concertsToFilter
-              .where(
-                (c) =>
-                    c.startDateTime.isAfter(now) &&
-                    c.startDateTime.isBefore(endOfWeekend),
-              )
-              .toList();
+          _concerts =
+              concertsToFilter
+                  .where(
+                    (c) =>
+                        c.startDateTime.isAfter(now) &&
+                        c.startDateTime.isBefore(endOfWeekend),
+                  )
+                  .toList();
           break;
         default:
           _concerts = concertsToFilter;
@@ -187,225 +188,245 @@ class _DiscoverPageState extends State<DiscoverPage> {
             style: TextStyle(fontWeight: FontWeight.bold),
           ),
         ),
-        body: _isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF272727),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Row(
-                        children: _filters.map((filter) {
-                          final isSelected = _selectedFilter == filter;
-                          return Expanded(
-                            child: GestureDetector(
-                              onTap: () => _filterConcerts(filter),
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: isSelected
-                                      ? Colors.purpleAccent.withOpacity(0.2)
-                                      : Colors.transparent,
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: Center(
-                                  child: Text(
-                                    filter,
-                                    style: TextStyle(
-                                      color: isSelected
-                                          ? Colors.purpleAccent
-                                          : Colors.white,
-                                      fontWeight: isSelected
-                                          ? FontWeight.bold
-                                          : FontWeight.normal,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          );
-                        }).toList(),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    if (_selectedFilter == 'Discovery')
-                      TextField(
-                        controller: _searchController,
-                        decoration: InputDecoration(
-                          hintText: 'Search for concerts...',
-                          prefixIcon: const Icon(
-                            Icons.search,
-                            color: Colors.grey,
-                          ),
-                          suffixIcon: _searchController.text.isNotEmpty
-                              ? IconButton(
-                                  icon: const Icon(
-                                    Icons.clear,
-                                    color: Colors.grey,
-                                  ),
-                                  onPressed: () {
-                                    _searchController.clear();
-                                    _searchConcerts('');
-                                  },
-                                )
-                              : null,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(25.0),
-                            borderSide: BorderSide.none,
-                          ),
-                          filled: true,
-                          fillColor: const Color(0xFF272727),
-                          contentPadding: const EdgeInsets.symmetric(
-                            vertical: 4,
-                          ),
+        body:
+            _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF272727),
+                          borderRadius: BorderRadius.circular(20),
                         ),
-                        onSubmitted: _searchConcerts,
-                      ),
-                    if (_selectedFilter == 'Discovery')
-                      const SizedBox(height: 20),
-                    Text(
-                      _isSearching ? 'Search Results' : '',
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Expanded(
-                      child: _concerts.isEmpty
-                          ? Center(
-                              child: Text(
-                                _isSearching
-                                    ? 'Search for concerts'
-                                    : 'No upcoming concerts',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: Colors.grey[400],
-                                ),
-                              ),
-                            )
-                          : ListView.builder(
-                              itemCount: _concerts.length,
-                              itemBuilder: (context, index) {
-                                final concert = _concerts[index];
-                                return GestureDetector(
-                                  onTap: () => Navigator.push(
-                                    context,
-                                    ConcertDetailsPage.route(concert),
-                                  ),
-                                  child: Card(
-                                    margin: const EdgeInsets.only(
-                                      bottom: 12,
-                                    ),
-                                    elevation: 0,
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(12.0),
-                                      child: Row(
-                                        children: [
-                                          Container(
-                                            width: 70,
-                                            height: 70,
-                                            child: FutureBuilder<ImageProvider>(
-                                              future:
-                                                  concert.getImageProvider(),
-                                              builder: (context, snapshot) {
-                                                return Container(
-                                                  decoration: BoxDecoration(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                      10,
-                                                    ),
-                                                    image: DecorationImage(
-                                                      image: snapshot.data ??
-                                                          const NetworkImage(
-                                                            'https://placehold.co/100x100.png',
-                                                          ),
-                                                      fit: BoxFit.cover,
-                                                    ),
-                                                  ),
-                                                );
-                                              },
-                                            ),
+                        child: Row(
+                          children:
+                              _filters.map((filter) {
+                                final isSelected = _selectedFilter == filter;
+                                return Expanded(
+                                  child: GestureDetector(
+                                    onTap: () => _filterConcerts(filter),
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        color:
+                                            isSelected
+                                                ? Colors.purpleAccent
+                                                    .withOpacity(0.2)
+                                                : Colors.transparent,
+                                        borderRadius: BorderRadius.circular(20),
+                                      ),
+                                      child: Center(
+                                        child: Text(
+                                          filter,
+                                          style: TextStyle(
+                                            color:
+                                                isSelected
+                                                    ? Colors.purpleAccent
+                                                    : Colors.white,
+                                            fontWeight:
+                                                isSelected
+                                                    ? FontWeight.bold
+                                                    : FontWeight.normal,
                                           ),
-                                          const SizedBox(width: 16),
-                                          Expanded(
-                                            child: Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                Text(
-                                                  concert.name,
-                                                  style: const TextStyle(
-                                                    fontSize: 16,
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                ),
-                                                const SizedBox(height: 4),
-                                                Text(
-                                                  concert.venue,
-                                                  style: TextStyle(
-                                                    fontSize: 14,
-                                                    color: Colors.grey[400],
-                                                  ),
-                                                ),
-                                                const SizedBox(height: 4),
-                                                Text(
-                                                  concert
-                                                      .getFormattedStartTime(),
-                                                  style: TextStyle(
-                                                    fontSize: 14,
-                                                    color: Colors.grey[400],
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                          FutureBuilder<bool>(
-                                            future:
-                                                FavoritesService.initialize()
-                                                    .then((service) => service
-                                                        .isConcertFavorited(
-                                                            concert.id)),
-                                            builder: (context, snapshot) {
-                                              final isFavorited =
-                                                  snapshot.data ?? false;
-                                              return IconButton(
-                                                icon: Icon(
-                                                  isFavorited
-                                                      ? Icons.favorite
-                                                      : Icons.favorite_border,
-                                                  color: isFavorited
-                                                      ? Colors.red
-                                                      : Colors.grey[400],
-                                                ),
-                                                onPressed: () async {
-                                                  final service =
-                                                      await FavoritesService
-                                                          .initialize();
-                                                  await service
-                                                      .toggleFavoriteConcert(
-                                                          concert);
-                                                  setState(() {});
-                                                },
-                                              );
-                                            },
-                                          ),
-                                        ],
+                                        ),
                                       ),
                                     ),
                                   ),
                                 );
-                              },
+                              }).toList(),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      if (_selectedFilter == 'Discovery')
+                        TextField(
+                          controller: _searchController,
+                          decoration: InputDecoration(
+                            hintText: 'Search for concerts...',
+                            prefixIcon: const Icon(
+                              Icons.search,
+                              color: Colors.grey,
                             ),
-                    ),
-                  ],
+                            suffixIcon:
+                                _searchController.text.isNotEmpty
+                                    ? IconButton(
+                                      icon: const Icon(
+                                        Icons.clear,
+                                        color: Colors.grey,
+                                      ),
+                                      onPressed: () {
+                                        _searchController.clear();
+                                        _searchConcerts('');
+                                      },
+                                    )
+                                    : null,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(25.0),
+                              borderSide: BorderSide.none,
+                            ),
+                            filled: true,
+                            fillColor: const Color(0xFF272727),
+                            contentPadding: const EdgeInsets.symmetric(
+                              vertical: 4,
+                            ),
+                          ),
+                          onSubmitted: _searchConcerts,
+                        ),
+                      if (_selectedFilter == 'Discovery')
+                        const SizedBox(height: 20),
+                      Text(
+                        _isSearching ? 'Search Results' : '',
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Expanded(
+                        child:
+                            _concerts.isEmpty
+                                ? Center(
+                                  child: Text(
+                                    _isSearching
+                                        ? 'Search for concerts'
+                                        : 'No upcoming concerts',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      color: Colors.grey[400],
+                                    ),
+                                  ),
+                                )
+                                : ListView.builder(
+                                  itemCount: _concerts.length,
+                                  itemBuilder: (context, index) {
+                                    final concert = _concerts[index];
+                                    return GestureDetector(
+                                      onTap:
+                                          () => Navigator.push(
+                                            context,
+                                            ConcertDetailsPage.route(concert),
+                                          ),
+                                      child: Card(
+                                        margin: const EdgeInsets.only(
+                                          bottom: 12,
+                                        ),
+                                        elevation: 0,
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(12.0),
+                                          child: Row(
+                                            children: [
+                                              SizedBox(
+                                                width: 70,
+                                                height: 70,
+                                                child: FutureBuilder<
+                                                  ImageProvider
+                                                >(
+                                                  future:
+                                                      concert
+                                                          .getImageProvider(),
+                                                  builder: (context, snapshot) {
+                                                    return Container(
+                                                      decoration: BoxDecoration(
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                              10,
+                                                            ),
+                                                        image: DecorationImage(
+                                                          image:
+                                                              snapshot.data ??
+                                                              const NetworkImage(
+                                                                'https://placehold.co/100x100.png',
+                                                              ),
+                                                          fit: BoxFit.cover,
+                                                        ),
+                                                      ),
+                                                    );
+                                                  },
+                                                ),
+                                              ),
+                                              const SizedBox(width: 16),
+                                              Expanded(
+                                                child: Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    Text(
+                                                      concert.name,
+                                                      style: const TextStyle(
+                                                        fontSize: 16,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                      ),
+                                                    ),
+                                                    const SizedBox(height: 4),
+                                                    Text(
+                                                      concert.venue,
+                                                      style: TextStyle(
+                                                        fontSize: 14,
+                                                        color: Colors.grey[400],
+                                                      ),
+                                                    ),
+                                                    const SizedBox(height: 4),
+                                                    Text(
+                                                      concert
+                                                          .getFormattedStartTime(),
+                                                      style: TextStyle(
+                                                        fontSize: 14,
+                                                        color: Colors.grey[400],
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                              FutureBuilder<bool>(
+                                                future:
+                                                    FavoritesService.initialize()
+                                                        .then(
+                                                          (service) => service
+                                                              .isConcertFavorited(
+                                                                concert.id,
+                                                              ),
+                                                        ),
+                                                builder: (context, snapshot) {
+                                                  final isFavorited =
+                                                      snapshot.data ?? false;
+                                                  return IconButton(
+                                                    icon: Icon(
+                                                      isFavorited
+                                                          ? Icons.favorite
+                                                          : Icons
+                                                              .favorite_border,
+                                                      color:
+                                                          isFavorited
+                                                              ? Colors.red
+                                                              : Colors
+                                                                  .grey[400],
+                                                    ),
+                                                    onPressed: () async {
+                                                      final service =
+                                                          await FavoritesService.initialize();
+                                                      await service
+                                                          .toggleFavoriteConcert(
+                                                            concert,
+                                                          );
+                                                      setState(() {});
+                                                    },
+                                                  );
+                                                },
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
       ),
     );
   }

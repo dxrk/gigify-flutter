@@ -3,11 +3,7 @@ class Genre {
   final String name;
   final String? parentGenre;
 
-  Genre({
-    required this.id,
-    required this.name,
-    this.parentGenre,
-  });
+  Genre({required this.id, required this.name, this.parentGenre});
 
   factory Genre.fromJson(Map<String, dynamic> json) {
     return Genre(
@@ -18,11 +14,7 @@ class Genre {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'name': name,
-      'parentGenre': parentGenre,
-    };
+    return {'id': id, 'name': name, 'parentGenre': parentGenre};
   }
 
   static Map<String, List<String>> getRelatedGenres() {
@@ -32,7 +24,7 @@ class Genre {
         'hard rock',
         'indie rock',
         'classic rock',
-        'punk rock'
+        'punk rock',
       ],
       'pop': ['pop rock', 'dance pop', 'synthpop', 'electropop', 'k-pop'],
       'hip hop': ['rap', 'trap', 'r&b', 'urban', 'grime'],
@@ -42,14 +34,14 @@ class Genre {
         'house',
         'trance',
         'dubstep',
-        'drum and bass'
+        'drum and bass',
       ],
       'metal': [
         'heavy metal',
         'death metal',
         'black metal',
         'thrash metal',
-        'metalcore'
+        'metalcore',
       ],
       'jazz': ['bebop', 'smooth jazz', 'fusion', 'big band', 'swing'],
       'country': [
@@ -57,14 +49,14 @@ class Genre {
         'contemporary country',
         'americana',
         'bluegrass',
-        'folk'
+        'folk',
       ],
       'classical': [
         'orchestra',
         'chamber music',
         'opera',
         'symphony',
-        'baroque'
+        'baroque',
       ],
       'reggae': ['dancehall', 'dub', 'ska', 'roots reggae'],
       'latin': ['salsa', 'reggaeton', 'bachata', 'latin pop', 'merengue'],
@@ -72,13 +64,13 @@ class Genre {
         'singer-songwriter',
         'acoustic',
         'indie folk',
-        'traditional folk'
+        'traditional folk',
       ],
       'blues': [
         'rhythm and blues',
         'chicago blues',
         'delta blues',
-        'electric blues'
+        'electric blues',
       ],
       'funk': ['soul', 'disco', 'r&b', 'motown'],
       'punk': ['hardcore punk', 'post-punk', 'pop punk', 'ska punk'],

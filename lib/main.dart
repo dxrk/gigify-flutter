@@ -82,11 +82,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     return _isAuthenticated ? const MainTabController() : const WelcomeScreen();
@@ -158,12 +154,14 @@ class _MainTabControllerState extends State<MainTabController> {
             BottomNavigationBarItem(
               icon: CircleAvatar(
                 radius: 12,
-                backgroundImage: _profileImageUrl != null
-                    ? NetworkImage(_profileImageUrl!)
-                    : null,
-                child: _profileImageUrl == null
-                    ? const Icon(Icons.person, size: 16)
-                    : null,
+                backgroundImage:
+                    _profileImageUrl != null
+                        ? NetworkImage(_profileImageUrl!)
+                        : null,
+                child:
+                    _profileImageUrl == null
+                        ? const Icon(Icons.person, size: 16)
+                        : null,
               ),
               label: 'Profile',
             ),

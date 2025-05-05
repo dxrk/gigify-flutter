@@ -43,7 +43,8 @@ class _ConcertDetailsPageState extends State<ConcertDetailsPage> {
             actions: [
               FutureBuilder<bool>(
                 future: FavoritesService.initialize().then(
-                    (service) => service.isConcertFavorited(widget.concert.id)),
+                  (service) => service.isConcertFavorited(widget.concert.id),
+                ),
                 builder: (context, snapshot) {
                   final isFavorited = snapshot.data ?? false;
                   return IconButton(
@@ -67,9 +68,11 @@ class _ConcertDetailsPageState extends State<ConcertDetailsPage> {
                   return Container(
                     decoration: BoxDecoration(
                       image: DecorationImage(
-                        image: snapshot.data ??
+                        image:
+                            snapshot.data ??
                             const NetworkImage(
-                                'https://placehold.co/400x200.png'),
+                              'https://placehold.co/400x200.png',
+                            ),
                         fit: BoxFit.cover,
                         colorFilter: ColorFilter.mode(
                           Colors.black.withOpacity(0.5),
@@ -104,93 +107,76 @@ class _ConcertDetailsPageState extends State<ConcertDetailsPage> {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  _buildInfoSection(
-                    'Date & Time',
-                    [
-                      _buildInfoRow(
-                        Icons.calendar_today,
-                        DateFormat('EEEE, MMMM d, y')
-                            .format(widget.concert.startDateTime),
-                      ),
-                      _buildInfoRow(
-                        Icons.access_time,
-                        DateFormat('h:mm a')
-                            .format(widget.concert.startDateTime),
-                      ),
-                    ],
-                  ),
+                  _buildInfoSection('Date & Time', [
+                    _buildInfoRow(
+                      Icons.calendar_today,
+                      DateFormat(
+                        'EEEE, MMMM d, y',
+                      ).format(widget.concert.startDateTime),
+                    ),
+                    _buildInfoRow(
+                      Icons.access_time,
+                      DateFormat('h:mm a').format(widget.concert.startDateTime),
+                    ),
+                  ]),
                   const SizedBox(height: 16),
-                  _buildInfoSection(
-                    'Venue',
-                    [
-                      _buildInfoRow(
-                        Icons.location_on,
-                        widget.concert.venue,
-                      ),
-                    ],
-                  ),
+                  _buildInfoSection('Venue', [
+                    _buildInfoRow(Icons.location_on, widget.concert.venue),
+                  ]),
                   const SizedBox(height: 16),
                   if (widget.concert.minPrice != null ||
                       widget.concert.maxPrice != null)
-                    _buildInfoSection(
-                      'Price Range',
-                      [
-                        _buildInfoRow(
-                          Icons.attach_money,
-                          widget.concert.minPrice != null &&
-                                  widget.concert.maxPrice != null
-                              ? '\$${widget.concert.minPrice!.toStringAsFixed(2)} - \$${widget.concert.maxPrice!.toStringAsFixed(2)}'
-                              : widget.concert.minPrice != null
-                                  ? 'From \$${widget.concert.minPrice!.toStringAsFixed(2)}'
-                                  : 'Up to \$${widget.concert.maxPrice!.toStringAsFixed(2)}',
-                        ),
-                      ],
-                    ),
+                    _buildInfoSection('Price Range', [
+                      _buildInfoRow(
+                        Icons.attach_money,
+                        widget.concert.minPrice != null &&
+                                widget.concert.maxPrice != null
+                            ? '\$${widget.concert.minPrice!.toStringAsFixed(2)} - \$${widget.concert.maxPrice!.toStringAsFixed(2)}'
+                            : widget.concert.minPrice != null
+                            ? 'From \$${widget.concert.minPrice!.toStringAsFixed(2)}'
+                            : 'Up to \$${widget.concert.maxPrice!.toStringAsFixed(2)}',
+                      ),
+                    ]),
                   if (widget.concert.minPrice != null ||
                       widget.concert.maxPrice != null)
                     const SizedBox(height: 16),
                   if (widget.concert.genres.isNotEmpty)
-                    _buildInfoSection(
-                      'Genres',
-                      [
-                        Wrap(
-                          spacing: 8,
-                          children: widget.concert.genres
-                              .map((genre) => Chip(
+                    _buildInfoSection('Genres', [
+                      Wrap(
+                        spacing: 8,
+                        children:
+                            widget.concert.genres
+                                .map(
+                                  (genre) => Chip(
                                     label: Text(genre),
-                                    backgroundColor:
-                                        Colors.purpleAccent.withOpacity(0.2),
+                                    backgroundColor: Colors.purpleAccent
+                                        .withOpacity(0.2),
                                     labelStyle: const TextStyle(
-                                        color: Colors.purpleAccent),
-                                  ))
-                              .toList(),
-                        ),
-                      ],
-                    ),
+                                      color: Colors.purpleAccent,
+                                    ),
+                                  ),
+                                )
+                                .toList(),
+                      ),
+                    ]),
                   if (widget.concert.genres.isNotEmpty)
                     const SizedBox(height: 16),
                   if (widget.concert.description != null)
-                    _buildInfoSection(
-                      'About',
-                      [
-                        Text(
-                          widget.concert.description!,
-                          style: const TextStyle(fontSize: 16),
-                        ),
-                      ],
-                    ),
+                    _buildInfoSection('About', [
+                      Text(
+                        widget.concert.description!,
+                        style: const TextStyle(fontSize: 16),
+                      ),
+                    ]),
                   if (widget.concert.description != null)
                     const SizedBox(height: 16),
                   if (widget.concert.ageRestriction != null)
-                    _buildInfoSection(
-                      'Age Restriction',
-                      [
-                        _buildInfoRow(
-                          Icons.person,
-                          '${widget.concert.ageRestriction}+ years',
-                        ),
-                      ],
-                    ),
+                    _buildInfoSection('Age Restriction', [
+                      _buildInfoRow(
+                        Icons.person,
+                        '${widget.concert.ageRestriction}+ years',
+                      ),
+                    ]),
                   if (widget.concert.ageRestriction != null)
                     const SizedBox(height: 16),
                   if (widget.concert.isSoldOut)
@@ -244,10 +230,7 @@ class _ConcertDetailsPageState extends State<ConcertDetailsPage> {
       children: [
         Text(
           title,
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
         ...children,

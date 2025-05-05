@@ -111,33 +111,34 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                       borderRadius: BorderRadius.circular(30),
                     ),
                   ),
-                  child: _isLoading
-                      ? const SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2,
-                          ),
-                        )
-                      : Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Image.network(
-                              'https://upload.wikimedia.org/wikipedia/commons/9/9b/Spotify_1.png',
-                              height: 24,
+                  child:
+                      _isLoading
+                          ? const SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
                             ),
-                            const SizedBox(width: 12),
-                            const Text(
-                              'Login with Spotify',
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
+                          )
+                          : Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Image.network(
+                                'https://upload.wikimedia.org/wikipedia/commons/9/9b/Spotify_1.png',
+                                height: 24,
                               ),
-                            ),
-                          ],
-                        ),
+                              const SizedBox(width: 12),
+                              const Text(
+                                'Login with Spotify',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
                 ),
               ],
             ),

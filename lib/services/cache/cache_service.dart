@@ -16,13 +16,15 @@ class TicketmasterImageCacheManager extends CacheManager {
   }
 
   TicketmasterImageCacheManager._()
-      : super(Config(
+    : super(
+        Config(
           key,
           stalePeriod: maxAge,
           maxNrOfCacheObjects: 100,
           repo: JsonCacheInfoRepository(databaseName: key),
           fileService: HttpFileService(),
-        ));
+        ),
+      );
 }
 
 class CacheService {
@@ -119,10 +121,13 @@ class CacheService {
 
         for (final entry in map.entries) {
           final List<dynamic> concertList = entry.value as List<dynamic>;
-          result[entry.key] = concertList
-              .map((concertJson) =>
-                  Concert.fromJson(concertJson as Map<String, dynamic>))
-              .toList();
+          result[entry.key] =
+              concertList
+                  .map(
+                    (concertJson) =>
+                        Concert.fromJson(concertJson as Map<String, dynamic>),
+                  )
+                  .toList();
         }
 
         return result as T;
@@ -173,10 +178,7 @@ class CacheService {
 
   Future<String?> cacheFile(String url, String key) async {
     try {
-      final fileInfo = await _cacheManager.downloadFile(
-        url,
-        key: key,
-      );
+      final fileInfo = await _cacheManager.downloadFile(url, key: key);
       return fileInfo.file.path;
     } catch (e) {
       print('Error caching file: $e');
@@ -222,9 +224,11 @@ class CacheService {
     try {
       final keys = _prefs.getKeys();
 
-      final recommendationKeys = keys.where((key) =>
-          key.contains('recommendations') ||
-          key.contains('concert_recommendations'));
+      final recommendationKeys = keys.where(
+        (key) =>
+            key.contains('recommendations') ||
+            key.contains('concert_recommendations'),
+      );
 
       for (final key in recommendationKeys) {
         await _prefs.remove(key);
