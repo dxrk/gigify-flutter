@@ -33,7 +33,7 @@ class DiscoverPage extends StatefulWidget {
 class _DiscoverPageState extends State<DiscoverPage> {
   List<Concert> _concerts = [];
   List<Concert> _allConcerts = [];
-  final List<String> _filters = ['Recommended', 'Discovery', 'This Weekend'];
+  final List<String> _filters = ['Recommended', 'Discovery', 'This Week'];
   String _selectedFilter = 'Recommended';
   bool _isLoading = true;
   final TextEditingController _searchController = TextEditingController();
