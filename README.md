@@ -1,4 +1,4 @@
-# gigify: CMSC436 Group Project
+# Gigify: CMSC436 Group Project
 
 **Course:** CMSC436 - Mobile Application Development  
 **Platform:** Flutter (Dart) — Focused on Android Development  
@@ -76,7 +76,22 @@ Gigify is an app designed to enhance the concert experience for its users. It pr
    ```bash
    flutter pub get
    ```
-3. **Run the app (Android):**
+3. **Create a `.env` file:**
+
+   ```bash
+   touch .env
+   ```
+
+   Add the following variables to the `.env` file:
+
+   ```bash
+      SPOTIFY_CLIENT_ID=your_spotify_client_id
+      SPOTIFY_CLIENT_SECRET=your_spotify_client_secret
+      SPOTIFY_REDIRECT_URI=nextbigthing://callback
+      TICKETMASTER_API_KEY=your_ticketmaster_api_key
+   ```
+
+4. **Run the app (Android):**
    ```bash
    flutter run
    ```
