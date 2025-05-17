@@ -120,3 +120,9 @@ Gigify is an app designed to enhance the concert experience for its users. It pr
 ## Acknowledgments
 
 This project is part of the CMSC436 curriculum and follows the guidelines and requirements set forth by the course instructors.
+
+## Future Work
+
+- I would still love to refine the algorithm for recommending concerts based on the user's data, maybe with an ML model.
+- Add integaration for Apple Music and other streaming services.
+- Social features such as finding friends with similar music tastes, others to go to concerts with, etc.
