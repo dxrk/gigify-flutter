@@ -67,11 +67,37 @@ class _AuthWrapperState extends State<AuthWrapper> {
   }
 
   Future<void> _checkAuthStatus() async {
-    final token = await getStoredAccessToken();
-    setState(() {
-      _isAuthenticated = token != null;
-      _isLoading = false;
-    });
+    try {
+      final token = await getStoredAccessToken();
+      if (token == null) {
+        setState(() {
+          _isAuthenticated = false;
+          _isLoading = false;
+        });
+        return;
+      }
+
+      // Verify token is still valid by making a test API call
+      try {
+        await SpotifyAPI.getUserProfile(token);
+        setState(() {
+          _isAuthenticated = true;
+          _isLoading = false;
+        });
+      } catch (e) {
+        // If API call fails, token is invalid
+        setState(() {
+          _isAuthenticated = false;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Auth check failed: $e');
+      setState(() {
+        _isAuthenticated = false;
+        _isLoading = false;
+      });
+    }
   }
 
   @override
@@ -131,35 +157,33 @@ class _MainTabControllerState extends State<MainTabController> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Scaffold(
-        body: _pages[_currentIndex],
-        bottomNavigationBar: BottomNavigationBar(
-          currentIndex: _currentIndex,
-          onTap: _onTabTapped,
-          items: [
-            const BottomNavigationBarItem(
-              icon: Icon(Icons.search),
-              label: 'Discover',
+    return Scaffold(
+      body: _pages[_currentIndex],
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _currentIndex,
+        onTap: _onTabTapped,
+        items: [
+          const BottomNavigationBarItem(
+            icon: Icon(Icons.search),
+            label: 'Discover',
+          ),
+          const BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Home',
+          ),
+          BottomNavigationBarItem(
+            icon: CircleAvatar(
+              radius: 12,
+              backgroundImage: _profileImageUrl != null
+                  ? NetworkImage(_profileImageUrl!)
+                  : null,
+              child: _profileImageUrl == null
+                  ? const Icon(Icons.person, size: 16)
+                  : null,
             ),
-            const BottomNavigationBarItem(
-              icon: Icon(Icons.home),
-              label: 'Home',
-            ),
-            BottomNavigationBarItem(
-              icon: CircleAvatar(
-                radius: 12,
-                backgroundImage: _profileImageUrl != null
-                    ? NetworkImage(_profileImageUrl!)
-                    : null,
-                child: _profileImageUrl == null
-                    ? const Icon(Icons.person, size: 16)
-                    : null,
-              ),
-              label: 'Profile',
-            ),
-          ],
-        ),
+            label: 'Profile',
+          ),
+        ],
       ),
     );
   }
